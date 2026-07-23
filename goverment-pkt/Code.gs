@@ -258,9 +258,11 @@ function getSettings() {
     ppAccount: p.getProperty('ppAccount') || '',
     ppNote:    p.getProperty('ppNote')    || '',
     slipEnabled: p.getProperty('slipEnabled') || '',
+    financeEnabled: (p.getProperty('financeEnabled') === null || p.getProperty('financeEnabled') === undefined) ? '1' : p.getProperty('financeEnabled'),
     themeColor: p.getProperty('themeColor') || '#0E7C86',
     notifyEmail:p.getProperty('notifyEmail') || '',
     notifyDays: p.getProperty('notifyDays')  || '30',
+    feeHotelTiers: p.getProperty('feeHotelTiers') || '',
     logoUrl:    getBig_('LOGO'),
     signUrl:    getBig_('SIGN'),
     garudaUrl:  getBig_('GARUDA'),
@@ -271,7 +273,7 @@ function getSettings() {
 function saveSettings(s) {
   try {
     var p = PropertiesService.getScriptProperties();
-    ['orgName','orgSub','mayorName','mayorTitle','receiverName','feeHaz','feeFood','feeMarket','feeFoodnotify','ppEnabled','ppType','ppId','ppName','ppBank','ppAccount','ppNote','slipEnabled','themeColor','notifyEmail','notifyDays'].forEach(function (k) {
+    ['orgName','orgSub','mayorName','mayorTitle','receiverName','feeHaz','feeFood','feeMarket','feeFoodnotify','feeHotelTiers','ppEnabled','ppType','ppId','ppName','ppBank','ppAccount','ppNote','slipEnabled','financeEnabled','themeColor','notifyEmail','notifyDays'].forEach(function (k) {
       if (s[k] != null) p.setProperty(k, String(s[k]));
     });
     return { ok: true };
@@ -951,7 +953,7 @@ function saveApplication(d) {
     d.appNo = no; d.receivedDate = d.receivedDate || Utilities.formatDate(now, 'GMT+7', 'yyyy-MM-dd');
     sheet.appendRow([no, d.receivedDate, d.formKey || '', d.applicantName || '', d.bizName || '',
       d.status || 'รับเรื่อง', JSON.stringify(d), Utilities.formatDate(now, 'GMT+7', 'yyyy-MM-dd HH:mm:ss')]);
-    return { ok: true, appNo: no };
+    return { ok: true, appNo: no, row: sheet.getLastRow() };
   } catch (e) { return { ok: false, error: e.message }; }
 }
 function updateApplication(d) {
@@ -1058,6 +1060,8 @@ function deleteReceipt(row, username) {
 /* ---------- อนุมัติ / ออกใบอนุญาต / ต่ออายุ ---------- */
 function fmtD_(d) { return Utilities.formatDate(d, 'GMT+7', 'yyyy-MM-dd'); }
 function plusOneYear_(base) { var d = new Date(base.getTime()); d.setFullYear(d.getFullYear() + 1); d.setDate(d.getDate() - 1); return d; }
+/* ตาราง prefix 6 กลุ่ม (ตรงกับฝั่งหน้าเว็บ LIC_GROUPS) */
+var LIC_PREFIX_ = { haz:'อภ.', market:'ตล.', food:'สอ.', pubvend:'สธ.', waste:'มฝ.', foodnotify:'สอ.รจ.' };
 function approveApplication(row) {
   try {
     var sheet = getSheet_(SH_APP, APP_HEADERS);
@@ -1065,11 +1069,20 @@ function approveApplication(row) {
     var d = {}; try { d = JSON.parse(cell || '{}'); } catch (e) {}
     var p = PropertiesService.getScriptProperties();
     var be = new Date().getFullYear() + 543;
+    var grp = d.formKey || 'haz';
+    var pfx = LIC_PREFIX_[grp] || '';
     if (!d.licNo) {
-      var key = 'LIC_SEQ_' + be;
+      // ออกเลขแยกตามกลุ่ม (running per กลุ่ม per ปี) — ไม่แตะ counter รวมเดิม LIC_SEQ_{be}
+      var key = 'LIC_SEQ_' + grp + '_' + be;
       var seq = (+(p.getProperty(key) || 0)) + 1;
       p.setProperty(key, String(seq));
       d.licNo = String(seq);
+      d.licGroup = grp;
+      d.licPrefix = pfx;
+    } else {
+      // ใบเก่าที่มีเลขแล้ว: ไม่เปลี่ยนเลข แต่เติม prefix/group ให้ถ้ายังไม่มี (ไม่กระทบเลขเดิม)
+      if (d.licGroup == null) d.licGroup = grp;
+      if (d.licPrefix == null) d.licPrefix = pfx;
     }
     if (!d.licYear) d.licYear = String(be);
     var today = new Date();
@@ -1078,7 +1091,29 @@ function approveApplication(row) {
     d.status = 'อนุมัติ';
     sheet.getRange(row, 6).setValue('อนุมัติ');
     sheet.getRange(row, 7).setValue(JSON.stringify(d));
-    return { ok: true, licNo: d.licNo, licYear: d.licYear, issueDate: d.issueDate, expireDate: d.expireDate };
+    return { ok: true, licNo: d.licNo, licYear: d.licYear, licPrefix: d.licPrefix, licGroup: d.licGroup, issueDate: d.issueDate, expireDate: d.expireDate };
+  } catch (e) { return { ok: false, error: e.message }; }
+}
+/* เติม prefix/กลุ่ม ให้ใบอนุญาตเก่าที่อนุมัติแล้วแต่ยังไม่มี licPrefix
+   — ไม่แตะ licNo เดิม, ไม่ยุ่ง counter, รันซ้ำได้ปลอดภัย (idempotent) */
+function backfillLicensePrefixes() {
+  try {
+    var sheet = getSheet_(SH_APP, APP_HEADERS);
+    var data = sheet.getDataRange().getValues();
+    var updated = 0, scanned = 0;
+    for (var i = 1; i < data.length; i++) {
+      if (!data[i][0]) continue;
+      var d = {}; try { d = JSON.parse(data[i][6] || '{}'); } catch (e) { continue; }
+      if (!d.licNo) continue;          // ยังไม่ออกเลข = ข้าม
+      scanned++;
+      var grp = d.formKey || 'haz';
+      var pfx = LIC_PREFIX_[grp] || '';
+      var changed = false;
+      if (d.licGroup == null) { d.licGroup = grp; changed = true; }
+      if (d.licPrefix == null) { d.licPrefix = pfx; changed = true; }
+      if (changed) { sheet.getRange(i + 1, 7).setValue(JSON.stringify(d)); updated++; }
+    }
+    return { ok: true, scanned: scanned, updated: updated };
   } catch (e) { return { ok: false, error: e.message }; }
 }
 function renewApplication(row) {
@@ -1124,7 +1159,7 @@ function renderVerifyLic_(no) {
   if (!found) {
     body = '<div class="box bad"><h2>ไม่พบข้อมูล</h2><p>ไม่พบคำขอ/ใบอนุญาตเลขที่ <b>' + esc_(no) + '</b> ในระบบ</p></div>';
   } else {
-    var names = { haz: 'ใบอนุญาตประกอบกิจการที่เป็นอันตรายต่อสุขภาพ', food: 'ใบอนุญาตจัดตั้งสถานที่จำหน่ายอาหารและสะสมอาหาร', market: 'ใบอนุญาตประกอบกิจการตลาด', foodnotify: 'หนังสือรับรองการแจ้งจัดตั้งสถานที่จำหน่ายอาหารและสะสมอาหาร' };
+    var names = { haz: 'ใบอนุญาตประกอบกิจการที่เป็นอันตรายต่อสุขภาพ', food: 'ใบอนุญาตจัดตั้งสถานที่จำหน่ายอาหารและสะสมอาหาร', market: 'ใบอนุญาตประกอบกิจการตลาด', foodnotify: 'หนังสือรับรองการแจ้งจัดตั้งสถานที่จำหน่ายอาหารและสะสมอาหาร', pubvend: 'ใบอนุญาตจำหน่ายสินค้าในที่หรือทางสาธารณะ', waste: 'ใบอนุญาตกำจัด/รับทำการเก็บขนสิ่งปฏิกูลหรือมูลฝอย' };
     var expired = false;
     if (found.expireDate) { var ex = new Date(found.expireDate); var t = new Date(); t.setHours(0,0,0,0); if (!isNaN(ex) && ex < t) expired = true; }
     var ok = (found.status === 'อนุมัติ') && !expired;
@@ -1132,9 +1167,10 @@ function renderVerifyLic_(no) {
       + '<table>'
       + '<tr><td>เลขที่คำขอ</td><td><b>' + esc_(found.appNo) + '</b></td></tr>'
       + '<tr><td>ประเภทเอกสาร</td><td>' + esc_(names[found.formKey] || found.formKey || '-') + '</td></tr>'
-      + (found.licNo ? ('<tr><td>เลขที่ใบอนุญาต</td><td>' + esc_(found.licNo) + (found.licYear ? (' ปี ' + esc_(found.licYear)) : '') + '</td></tr>') : '')
+      + (found.licNo ? ('<tr><td>เลขที่ใบอนุญาต</td><td>' + esc_((found.licPrefix || '') + found.licNo) + (found.licYear ? (' ปี ' + esc_(found.licYear)) : '') + '</td></tr>') : '')
       + '<tr><td>ผู้ขอ</td><td>' + esc_(found.applicantName || '-') + '</td></tr>'
       + '<tr><td>สถานประกอบการ</td><td>' + esc_(found.bizName || '-') + '</td></tr>'
+      + (String(found.isHotel) === '1' && found.rooms ? ('<tr><td>จำนวนห้องพัก</td><td>' + esc_(found.rooms) + ' ห้อง</td></tr>') : '')
       + '<tr><td>สถานะคำขอ</td><td>' + esc_(found.status || '-') + '</td></tr>'
       + (found.issueDate ? ('<tr><td>วันที่ออก</td><td>' + esc_(found.issueDate) + '</td></tr>') : '')
       + (found.expireDate ? ('<tr><td>วันหมดอายุ</td><td>' + esc_(found.expireDate) + (expired ? ' <span style="color:#c0392b">(หมดอายุ)</span>' : '') + '</td></tr>') : '')

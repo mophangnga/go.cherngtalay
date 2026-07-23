@@ -100,7 +100,11 @@
 #pvPaper .appdoc .ah img{height:96px;object-fit:contain}
 #pvPaper .appdoc .ah .t1{font-weight:700;font-size:19px;margin-top:12px;line-height:1.55}
 #pvPaper .appdoc .ah .t2{font-weight:700;font-size:17px;margin-top:6px;line-height:1.55}
-#pvPaper .appdoc .meta{text-align:right;line-height:2.2;margin-bottom:2px}
+#pvPaper .appdoc .metawrap{margin-left:auto;width:38%;min-width:210px;max-width:100%}
+#pvPaper .appdoc .meta{display:flex;flex-wrap:nowrap;align-items:baseline;column-gap:5px;line-height:2.2;margin-bottom:2px}
+#pvPaper .appdoc .meta .lb{white-space:nowrap;flex:0 0 auto}
+#pvPaper .appdoc .meta .fill{flex:0 1 auto;min-width:0;overflow:hidden;white-space:nowrap}
+#pvPaper .appdoc .meta .fill:last-child{flex:1 1 auto;min-width:20px}
 #pvPaper .appdoc p{margin:0 0 4px}
 #pvPaper .appdoc .para{text-indent:3em;margin-top:8px}
 #pvPaper .appdoc .cont{text-indent:0}
@@ -639,7 +643,11 @@ tbody tr.row-exp:hover{background:rgba(214,90,79,.13)}
   #printArea .appdoc .ah img{height:96px;object-fit:contain}
   #printArea .appdoc .ah .t1{font-weight:700;font-size:19px;margin-top:12px;line-height:1.55}
   #printArea .appdoc .ah .t2{font-weight:700;font-size:17px;margin-top:6px;line-height:1.55}
-  #printArea .appdoc .meta{text-align:right;line-height:2.2;margin-bottom:2px}
+  #printArea .appdoc .metawrap{margin-left:auto;width:38%;min-width:210px;max-width:100%}
+  #printArea .appdoc .meta{display:flex;flex-wrap:nowrap;align-items:baseline;column-gap:5px;line-height:2.2;margin-bottom:2px}
+  #printArea .appdoc .meta .lb{white-space:nowrap;flex:0 0 auto}
+  #printArea .appdoc .meta .fill{flex:0 1 auto;min-width:0;overflow:hidden;white-space:nowrap}
+  #printArea .appdoc .meta .fill:last-child{flex:1 1 auto;min-width:20px}
   #printArea .appdoc p{margin:0 0 4px}
   #printArea .appdoc .para{text-indent:3em;margin-top:8px}
   #printArea .appdoc .cont{text-indent:0}
@@ -842,6 +850,8 @@ tbody tr.row-exp:hover{background:rgba(214,90,79,.13)}
           <label class="fchk"><input type="checkbox" class="appform-chk" value="food" onchange="renderAppForm()"> จำหน่าย/สะสมอาหาร (ใบอนุญาต)</label>
           <label class="fchk"><input type="checkbox" class="appform-chk" value="market" onchange="renderAppForm()"> ตลาด</label>
           <label class="fchk"><input type="checkbox" class="appform-chk" value="foodnotify" onchange="renderAppForm()"> จำหน่าย/สะสมอาหาร (แจ้ง)</label>
+          <label class="fchk"><input type="checkbox" class="appform-chk" value="pubvend" onchange="renderAppForm()"> จำหน่ายสินค้าในที่/ทางสาธารณะ</label>
+          <label class="fchk"><input type="checkbox" class="appform-chk" value="waste" onchange="renderAppForm()"> เก็บขน/กำจัดสิ่งปฏิกูลมูลฝอย</label>
         </div></div>
         <div class="bd"><div id="appForm"><div class="empty" style="padding:36px">เลือกแบบฟอร์มด้านบนเพื่อเริ่มกรอกคำขอ</div></div></div>
       </div>
@@ -915,14 +925,17 @@ tbody tr.row-exp:hover{background:rgba(214,90,79,.13)}
         <button class="btn btn-primary btn-sm" onclick="openOp()">_IC_plus_ เพิ่มผู้ประกอบการ</button>
       </div>
       <div class="regctl">
-        <span class="ctl-lb">กรองสถานะ:</span>
+        <span class="ctl-lb">มุมมอง:</span>
+        <button class="ctl-btn on" id="regViewList" onclick="setRegView('list')">รายกิจการ</button>
+        <button class="ctl-btn" id="regViewGroup" onclick="setRegView('group')">จัดกลุ่มตามผู้ประกอบการ</button>
+        <span class="ctl-lb" style="margin-left:14px">กรองสถานะ:</span>
         <select class="ctl-sel" id="rf_status" onchange="regFilterChanged()"><option value="">ทั้งหมด</option><option>ปกติ</option><option>พักกิจการ</option><option>เลิกกิจการ</option></select>
         <span class="ctl-lb" style="margin-left:8px">เรียงตาม:</span>
         <button class="ctl-btn" id="sortCode" onclick="regSortBy('code')">รหัส</button>
         <button class="ctl-btn" id="sortDate" onclick="regSortBy('date')">วันที่ขึ้นทะเบียน</button>
         <button class="btn btn-ghost btn-sm" onclick="clearRegFilters()" style="margin-left:auto">_IC_close_ ล้างตัวกรอง</button>
       </div>
-      <div class="table-card"><table><thead><tr>
+      <div class="table-card"><table><thead><tr id="regHead">
         <th>รหัส</th><th>ผู้ประกอบการ</th><th>สถานประกอบการ</th><th>ประเภทกิจการ</th><th>เบอร์โทร</th><th>ขึ้นทะเบียน</th><th>สถานะ</th><th>จัดการ</th>
       </tr></thead><tbody id="regBody"></tbody></table><div id="regEmpty"></div><div id="regPager" class="pager"></div></div>
     </section>
@@ -991,6 +1004,11 @@ tbody tr.row-exp:hover{background:rgba(214,90,79,.13)}
                 <div style="flex:1;min-width:130px"><label style="font-size:12px;color:var(--muted)">ตลาด</label><input class="field" id="s_feeMarket" placeholder="เช่น 2000"></div>
                 <div style="flex:1;min-width:130px"><label style="font-size:12px;color:var(--muted)">อาหาร (แจ้ง)</label><input class="field" id="s_feeFoodnotify" placeholder="เช่น 500"></div>
               </div></div>
+              <div class="row"><label>อัตราค่าธรรมเนียมกิจการห้องพัก / โรงแรม (ตามจำนวนห้อง)</label>
+  <div id="hotelTierRows"></div>
+  <button type="button" class="btn btn-ghost btn-sm" onclick="addTierRow()">+ เพิ่มขั้น</button>
+  <div style="font-size:11.5px;color:var(--muted);margin-top:6px">ขั้นสุดท้าย เว้นช่อง "ไม่เกิน" ว่าง = ตั้งแต่ห้องถัดไปขึ้นไป · ระบบเรียงขั้นให้เอง</div>
+</div>
             <button class="btn btn-primary" id="saveSetBtn" onclick="saveSet()">_IC_save_ บันทึกการตั้งค่า</button>
           </div></div>
         <div>
@@ -1052,6 +1070,28 @@ tbody tr.row-exp:hover{background:rgba(214,90,79,.13)}
                 <input type="color" id="customColor" value="#0E7C86" style="width:54px;height:42px;border:1.5px solid var(--line);border-radius:10px;background:#fff;cursor:pointer" oninput="applyTheme(this.value,true)">
                 <span style="font-size:13px;color:var(--muted)">เลือกแล้วระบบจะปรับเฉดให้อัตโนมัติ</span>
               </div>
+            </div></div>
+          <div class="card" style="margin-top:18px"><div class="hd"><h3>เลขที่ใบอนุญาต 6 กลุ่ม (ตาม พรบ.สาธารณสุข)</h3></div>
+            <div class="bd form">
+              <div style="font-size:13px;line-height:1.9;color:var(--ink)">ระบบออกเลขที่ใบอนุญาตแยกกันตามกลุ่ม แต่ละกลุ่มมีลำดับและอักษรนำของตัวเอง:<br>
+                <span style="display:inline-block;margin-top:6px">
+                <span class="badge" style="background:var(--sand);color:var(--ocean);margin:2px">อภ. — กิจการอันตราย</span>
+                <span class="badge" style="background:var(--sand);color:var(--ocean);margin:2px">ตล. — ตลาด</span>
+                <span class="badge" style="background:var(--sand);color:var(--ocean);margin:2px">สอ. — จำหน่ายอาหาร (เกิน 200 ตร.ม.)</span>
+                <span class="badge" style="background:var(--sand);color:var(--ocean);margin:2px">สธ. — จำหน่ายในที่สาธารณะ</span>
+                <span class="badge" style="background:var(--sand);color:var(--ocean);margin:2px">มฝ. — เก็บขน/กำจัดสิ่งปฏิกูลมูลฝอย</span>
+                <span class="badge" style="background:var(--sand);color:var(--ocean);margin:2px">สอ.รจ. — หนังสือรับรองการแจ้ง (ไม่เกิน 200 ตร.ม.)</span>
+                </span>
+              </div>
+              <hr style="border:none;border-top:1px solid var(--line);margin:14px 0">
+              <div style="font-size:12.5px;color:var(--muted);line-height:1.8;margin-bottom:10px">ใบอนุญาตที่ออกก่อนอัปเดตนี้จะยังไม่มีอักษรนำ (โชว์เลขเปล่า) กดปุ่มด้านล่างเพื่อเติมอักษรนำย้อนหลังให้ทุกใบตามกลุ่มของมัน — <b>ไม่เปลี่ยนหมายเลขเดิม</b> รันซ้ำได้ปลอดภัย</div>
+              <button class="btn btn-ghost btn-sm" id="backfillBtn" onclick="doBackfillPrefix()">_IC_refresh_ เติมอักษรนำย้อนหลังให้ใบเก่า</button>
+              <div id="backfillResult" style="font-size:12.5px;margin-top:8px"></div>
+            </div></div>
+          <div class="card" style="margin-top:18px"><div class="hd"><h3>ระบบการเงินและการออกใบเสร็จ</h3></div>
+            <div class="bd form">
+              <label class="fchk" style="font-size:15px"><input type="checkbox" id="s_financeEnabled" onchange="finToggleHint()"> <b style="margin-left:3px">เปิดใช้งานระบบการเงิน / การออกใบเสร็จ</b></label>
+              <div id="finHint" style="font-size:12.5px;color:var(--muted);margin-top:10px;line-height:1.8;padding:12px 14px;background:var(--sand-2);border:1px solid var(--line);border-radius:10px"></div>
             </div></div>
           <div class="card" style="margin-top:18px"><div class="hd"><h3>รับชำระเงินด้วย QR พร้อมเพย์ (PromptPay)</h3></div>
             <div class="bd form">
@@ -1237,6 +1277,10 @@ tbody tr.row-exp:hover{background:rgba(214,90,79,.13)}
 <div class="modal" id="rnModal"><div class="modal-box">
   <div class="modal-bar"><h3 id="rnTitle">ประวัติการต่ออายุ</h3><button class="iconbtn" onclick="closeModal('rnModal')">_IC_close_</button></div>
   <div class="modal-body" id="rnBody" style="padding-top:8px"></div>
+</div></div>
+<div class="modal" id="opViewModal"><div class="modal-box" style="max-width:720px">
+  <div class="modal-bar"><h3 id="opViewTitle">กิจการของผู้ประกอบการ</h3><button class="iconbtn" onclick="closeModal('opViewModal')">_IC_close_</button></div>
+  <div class="modal-body" id="opViewBody" style="padding-bottom:20px"></div>
 </div></div>
 <div class="modal" id="opModal"><div class="modal-box wide">
   <div class="modal-bar"><h3 id="opModalTitle">เพิ่มผู้ประกอบการ</h3><button class="iconbtn" onclick="closeModal('opModal')">_IC_close_</button></div>
@@ -3732,9 +3776,13 @@ function mock(fn,cb,args){
     deleteApplication:function(){var row=args[0];if(M.apps)M.apps=M.apps.filter(function(x){return x.row!==row;});return {ok:true};},
     addApplications:function(){var L=args[0]||[];if(!M.apps)M.apps=[];L.forEach(function(d){var n='คข-'+('0000'+(M.apps.length+1)).slice(-4)+'/2569';d.appNo=n;d.row=M.apps.length+2;M.apps.unshift(d);});return {ok:true,count:L.length};},
     getReceiptState:function(){return {book:M.rcBook||'1',lastNo:M.rcSeq||0,fiscalYear:new Date().getFullYear()+543+((new Date().getMonth()+1>=10)?1:0)};},
-    approveApplication:function(){var row=args[0];var be=new Date().getFullYear()+543;M.licSeq=(M.licSeq||0)+1;var t=new Date();var ex=new Date(t);ex.setFullYear(ex.getFullYear()+1);ex.setDate(ex.getDate()-1);
-      var out={ok:true,licNo:String(M.licSeq),licYear:String(be),issueDate:t.toISOString().slice(0,10),expireDate:ex.toISOString().slice(0,10)};
-      if(M.apps)M.apps.forEach(function(x){if(x.row===row){x.status='อนุมัติ';x.licNo=x.licNo||out.licNo;x.licYear=x.licYear||out.licYear;x.issueDate=x.issueDate||out.issueDate;x.expireDate=x.expireDate||out.expireDate;}});
+    backfillLicensePrefixes:function(){var pmap={haz:'อภ.',market:'ตล.',food:'สอ.',pubvend:'สธ.',waste:'มฝ.',foodnotify:'สอ.รจ.'};var u=0,s=0;(M.apps||[]).forEach(function(d){if(!d.licNo)return;s++;var g=d.formKey||'haz';var ch=false;if(d.licGroup==null){d.licGroup=g;ch=true;}if(d.licPrefix==null){d.licPrefix=pmap[g]||'';ch=true;}if(ch)u++;});return {ok:true,scanned:s,updated:u};},
+    approveApplication:function(){var row=args[0];var be=new Date().getFullYear()+543;var t=new Date();var ex=new Date(t);ex.setFullYear(ex.getFullYear()+1);ex.setDate(ex.getDate()-1);
+      var app=(M.apps||[]).filter(function(x){return x.row===row;})[0];var grp=(app&&app.formKey)||'haz';
+      var pmap={haz:'อภ.',market:'ตล.',food:'สอ.',pubvend:'สธ.',waste:'มฝ.',foodnotify:'สอ.รจ.'};var pfx=pmap[grp]||'';
+      M.licSeqG=M.licSeqG||{};M.licSeqG[grp]=(M.licSeqG[grp]||0)+1;
+      var out={ok:true,licNo:String(M.licSeqG[grp]),licYear:String(be),licPrefix:pfx,licGroup:grp,issueDate:t.toISOString().slice(0,10),expireDate:ex.toISOString().slice(0,10)};
+      if(M.apps)M.apps.forEach(function(x){if(x.row===row){x.status='อนุมัติ';x.licNo=x.licNo||out.licNo;x.licYear=x.licYear||out.licYear;x.licPrefix=(x.licPrefix==null?out.licPrefix:x.licPrefix);x.licGroup=(x.licGroup==null?out.licGroup:x.licGroup);x.issueDate=x.issueDate||out.issueDate;x.expireDate=x.expireDate||out.expireDate;}});
       return out;},
     renewApplication:function(){var row=args[0];var t=new Date();var out=null;
       if(M.apps)M.apps.forEach(function(x){if(x.row===row){x.renewals=x.renewals||[];x.renewals.push({on:t.toISOString().slice(0,10)});var base=t;if(x.expireDate){var ex=new Date(x.expireDate);if(!isNaN(ex)&&ex>t)base=ex;}var ne=new Date(base);ne.setFullYear(ne.getFullYear()+1);ne.setDate(ne.getDate()-1);x.issueDate=t.toISOString().slice(0,10);x.expireDate=ne.toISOString().slice(0,10);x.rcBook='';x.rcNo='';x.rcDate='';x.paid='ยังไม่ชำระ';x.status='อนุมัติ';out={ok:true,issueDate:x.issueDate,expireDate:x.expireDate,count:x.renewals.length};}});
@@ -3817,6 +3865,7 @@ function startApp(){
   document.querySelectorAll('[data-role="admin"]').forEach(function(b){b.style.display=ME.role==='admin'?'':'none';});
   applyRoleNav();
   init();
+  applyFinanceVisibility();
   toast('ยินดีต้อนรับ '+(ME.name||ME.username),'ok');
   logIt('เข้าสู่ระบบ','');
 }
@@ -3893,6 +3942,7 @@ function applyRoleNav(){
 }
 function go(v){
   if((v==='users'||v==='settings'||v==='logs')&&(!ME||ME.role!=='admin')){toast('เฉพาะผู้ดูแลระบบเท่านั้น','err');return;}
+  if(v==='receipts'&&!financeOn()){toast('ระบบการเงิน/ใบเสร็จถูกปิดอยู่ (เปิดได้ที่หน้าตั้งค่า)','err');return;}
   if(!canView(v)){toast('บัญชีของคุณไม่มีสิทธิ์เข้าหน้านี้','err');return;}
   var cur=document.querySelector('.view.show');
   if(cur)saveViewState(cur.id.replace('view-',''));
@@ -3909,6 +3959,7 @@ function go(v){
   if(v==='users')loadUsers();
   if(v==='logs')loadLogs();
   if(v==='apps')loadApps();
+  if(v==='registry')loadApps(true);
   if(v==='receipts'){loadApps(true);loadReceiptState();}
   if(v==='report')loadApps();
   if(v==='dashboard')loadApps();
@@ -4278,7 +4329,41 @@ function dateKey_(s){s=String(s||'').trim();if(!s)return 0;var m=s.match(/^(\d{1
   m=s.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})$/);if(m){return (+m[1])*10000+(+m[2])*100+(+m[3]);}
   return 0;}
 function codeKey_(s){var m=String(s||'').match(/(\d+)/);return m?(+m[1]):0;}
+var regView='list';
+function setRegView(v){
+  regView=v;regPage=1;
+  var bl=document.getElementById('regViewList'),bg=document.getElementById('regViewGroup');
+  if(bl)bl.classList.toggle('on',v==='list');
+  if(bg)bg.classList.toggle('on',v==='group');
+  var head=document.getElementById('regHead');
+  if(head)head.innerHTML=(v==='group')
+    ? '<th>ผู้ประกอบการ</th><th>จำนวนกิจการ</th><th>ประเภทกิจการที่ประกอบ</th><th>เบอร์โทร</th><th>สถานะ</th><th>ดูรายละเอียด</th>'
+    : '<th>รหัส</th><th>ผู้ประกอบการ</th><th>สถานประกอบการ</th><th>ประเภทกิจการ</th><th>เบอร์โทร</th><th>ขึ้นทะเบียน</th><th>สถานะ</th><th>จัดการ</th>';
+  renderRegistry();
+}
+/* รวมผู้ประกอบการตามชื่อ (+เลขบัตร ถ้ามี) */
+function opGroupKey_(o){return (String(o.operatorName||'').trim().toLowerCase())+'|'+(String(o.idNumber||'').trim());}
+function groupOperators_(list){
+  var map={},order=[];
+  list.forEach(function(o){
+    var k=opGroupKey_(o);
+    if(!map[k]){map[k]={key:k,operatorName:o.operatorName,idNumber:o.idNumber,phone:o.phone,items:[]};order.push(k);}
+    var g=map[k];g.items.push(o);
+    if(!g.phone&&o.phone)g.phone=o.phone;
+  });
+  return order.map(function(k){
+    var g=map[k];
+    var types={};g.items.forEach(function(it){
+      (String(it.bizType||'').split(',')).forEach(function(t){t=t.trim();if(t)types[t]=1;});
+    });
+    g.typeList=Object.keys(types);
+    // สถานะรวม: ปกติถ้ามีกิจการปกติอย่างน้อย 1
+    g.status=g.items.some(function(it){return it.status==='ปกติ';})?'ปกติ':(g.items[0].status||'-');
+    return g;
+  });
+}
 function renderRegistry(){
+  if(regView==='group')return renderRegistryGrouped();
   var q=val('regSearch').toLowerCase();
   var fStatus=rfv('rf_status');
   var list=(DATA.operators||[]).filter(function(o){
@@ -4321,6 +4406,86 @@ function renderRegistry(){
       nums+
       '<button class="pg-nav" '+(regPage>=pages?'disabled':'')+' onclick="regGo('+(regPage+1)+')">ถัดไป '+svg('chevR',16)+'</button></div>';
   }
+}
+function renderRegistryGrouped(){
+  var q=val('regSearch').toLowerCase();
+  var fStatus=rfv('rf_status');
+  var base=(DATA.operators||[]).filter(function(o){
+    if(fStatus&&String(o.status||'').toLowerCase()!==fStatus)return false;
+    return true;
+  });
+  var groups=groupOperators_(base).filter(function(g){
+    if(!q)return true;
+    var hay=(g.operatorName+' '+(g.idNumber||'')+' '+g.typeList.join(' ')+' '+g.items.map(function(i){return i.businessName;}).join(' ')).toLowerCase();
+    return hay.indexOf(q)>-1;
+  });
+  groups.sort(function(a,b){return b.items.length-a.items.length;});
+  var tb=document.getElementById('regBody'),emp=document.getElementById('regEmpty'),pg=document.getElementById('regPager');
+  if(pg)pg.innerHTML='';
+  if(!groups.length){tb.innerHTML='';emp.innerHTML='<div class="empty"><div class="em-ic">'+svg('building',28)+'</div>'+((DATA.operators||[]).length?'ไม่พบผู้ประกอบการที่ค้นหา':'ยังไม่มีผู้ประกอบการในทะเบียน')+'</div>';return;}
+  emp.innerHTML='';
+  var total=groups.length,pages=Math.ceil(total/REG_PAGE_SIZE);
+  if(regPage>pages)regPage=pages;if(regPage<1)regPage=1;
+  var start=(regPage-1)*REG_PAGE_SIZE,pageList=groups.slice(start,start+REG_PAGE_SIZE);
+  tb.innerHTML=pageList.map(function(g){
+    var c=g.status==='ปกติ'?'b-ok':(g.status==='เลิกกิจการ'?'b-bad':'b-warn');
+    var chips=g.typeList.length?g.typeList.slice(0,4).map(function(t){return '<span class="badge" style="background:var(--sand);color:var(--ocean);margin:1px 3px 1px 0;font-size:11px">'+esc(t)+'</span>';}).join('')+(g.typeList.length>4?(' <span style="font-size:11px;color:var(--muted)">+'+(g.typeList.length-4)+'</span>'):''):'<span style="color:var(--muted)">—</span>';
+    return '<tr>'+
+      '<td><b>'+esc(g.operatorName)+'</b>'+(g.idNumber?('<div class="gs-sub" style="font-size:11.5px;color:var(--muted)">เลขบัตร/ทะเบียน '+esc(g.idNumber)+'</div>'):'')+'</td>'+
+      '<td style="text-align:center"><span class="badge b-ok" style="font-size:14px;min-width:34px">'+g.items.length+'</span></td>'+
+      '<td>'+chips+'</td>'+
+      '<td>'+esc(g.phone||'—')+'</td>'+
+      '<td><span class="badge '+c+'">'+esc(g.status)+'</span></td>'+
+      '<td><button class="btn btn-ghost btn-sm" onclick="viewOperator(\''+encodeURIComponent(g.key)+'\')">'+svg('search',15)+' ดูกิจการ ('+g.items.length+')</button></td>'+
+      '</tr>';}).join('');
+  if(pg&&pages>1){
+    var from=start+1,to=Math.min(start+REG_PAGE_SIZE,total),nums='',win=2;
+    for(var i=1;i<=pages;i++){
+      if(i===1||i===pages||(i>=regPage-win&&i<=regPage+win))nums+='<button class="pg-num'+(i===regPage?' on':'')+'" onclick="regGo('+i+')">'+i+'</button>';
+      else if(i===regPage-win-1||i===regPage+win+1)nums+='<span class="pg-dots">…</span>';
+    }
+    pg.innerHTML='<div class="pg-info">ผู้ประกอบการ '+total+' ราย</div>'+
+      '<div class="pg-btns"><button class="pg-nav" '+(regPage<=1?'disabled':'')+' onclick="regGo('+(regPage-1)+')">'+svg('chevL',16)+' ก่อนหน้า</button>'+nums+
+      '<button class="pg-nav" '+(regPage>=pages?'disabled':'')+' onclick="regGo('+(regPage+1)+')">ถัดไป '+svg('chevR',16)+'</button></div>';
+  }else if(pg){pg.innerHTML='<div class="pg-info">ผู้ประกอบการ '+total+' ราย</div>';}
+}
+function viewOperator(keyEnc){
+  var key=decodeURIComponent(keyEnc);
+  var items=(DATA.operators||[]).filter(function(o){return opGroupKey_(o)===key;});
+  if(!items.length){toast('ไม่พบข้อมูล','err');return;}
+  var op=items[0];
+  document.getElementById('opViewTitle').textContent='กิจการของ '+op.operatorName;
+  // หาคำขอ/ใบอนุญาตที่ผูกกับผู้ประกอบการนี้ (จับคู่ด้วยชื่อผู้ขอ)
+  var apps=(DATA.applications||[]).filter(function(a){return String(a.applicantName||'').trim().toLowerCase()===String(op.operatorName||'').trim().toLowerCase();});
+  var types={};items.forEach(function(it){(String(it.bizType||'').split(',')).forEach(function(t){t=t.trim();if(t)types[t]=1;});});
+  var typeList=Object.keys(types);
+  var h='<div style="background:var(--sand-2);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:14px">'+
+    '<div style="font-size:15px;font-weight:600">'+esc(op.operatorName)+'</div>'+
+    (op.idNumber?('<div style="font-size:12.5px;color:var(--muted);margin-top:2px">เลขบัตร/ทะเบียน: '+esc(op.idNumber)+'</div>'):'')+
+    (op.phone?('<div style="font-size:12.5px;color:var(--muted)">โทร: '+esc(op.phone)+'</div>'):'')+
+    '<div style="margin-top:8px;display:flex;gap:14px;flex-wrap:wrap">'+
+      '<span style="font-size:13px"><b style="color:var(--ocean);font-size:16px">'+items.length+'</b> สถานประกอบการ</span>'+
+      '<span style="font-size:13px"><b style="color:var(--teal);font-size:16px">'+typeList.length+'</b> ประเภทกิจการ</span>'+
+      (apps.length?('<span style="font-size:13px"><b style="color:var(--gold);font-size:16px">'+apps.length+'</b> คำขอ/ใบอนุญาตในระบบ</span>'):'')+
+    '</div></div>';
+  h+='<h4 style="margin:4px 0 8px;font-size:14px;color:var(--ocean)">ประเภทกิจการที่ประกอบ</h4>';
+  h+=typeList.length?('<div style="margin-bottom:16px">'+typeList.map(function(t){return '<span class="badge" style="background:var(--sand);color:var(--ocean);margin:2px 4px 2px 0">'+esc(t)+'</span>';}).join('')+'</div>'):'<div style="color:var(--muted);font-size:13px;margin-bottom:16px">— ยังไม่ได้ระบุประเภท</div>';
+  h+='<h4 style="margin:4px 0 8px;font-size:14px;color:var(--ocean)">รายการสถานประกอบการ ('+items.length+')</h4>';
+  h+='<div class="table-card" style="box-shadow:none"><table><thead><tr><th>รหัส</th><th>สถานประกอบการ</th><th>ประเภท</th><th>สถานะ</th><th>จัดการ</th></tr></thead><tbody>'+
+    items.map(function(o){var c=o.status==='ปกติ'?'b-ok':(o.status==='เลิกกิจการ'?'b-bad':'b-warn');
+      return '<tr><td><span class="cno">'+esc(o.code)+'</span></td><td>'+esc(o.businessName)+'</td><td style="font-size:12.5px">'+esc(o.bizType||'—')+'</td>'+
+        '<td><span class="badge '+c+'">'+esc(o.status)+'</span></td>'+
+        '<td><button class="iconbtn tip" data-tip="แก้ไข" onclick="closeModal(\'opViewModal\');openOp('+o.row+')">'+svg('edit',15)+'</button></td></tr>';}).join('')+
+    '</tbody></table></div>';
+  if(apps.length){
+    h+='<h4 style="margin:16px 0 8px;font-size:14px;color:var(--ocean)">คำขอ / ใบอนุญาตในระบบ ('+apps.length+')</h4>';
+    h+='<div class="table-card" style="box-shadow:none"><table><thead><tr><th>เลขที่คำขอ</th><th>ประเภท</th><th>สถานประกอบการ</th><th>สถานะ</th></tr></thead><tbody>'+
+      apps.map(function(a){var sc=a.status==='อนุมัติ'?'b-ok':(a.status==='ไม่อนุมัติ'?'b-bad':'b-warn');
+        return '<tr><td><b style="color:var(--ocean)">'+esc(a.appNo)+'</b></td><td style="font-size:12.5px">'+esc(FORM_NAMES[a.formKey]||a.formKey||'-')+'</td><td>'+esc(a.bizName||'-')+'</td><td><span class="badge '+sc+'">'+esc(a.status||'-')+'</span></td></tr>';}).join('')+
+      '</tbody></table></div>';
+  }
+  document.getElementById('opViewBody').innerHTML=h;
+  openModal('opViewModal');
 }
 function openOp(row){
   document.getElementById('opModalTitle').textContent=row?'แก้ไขผู้ประกอบการ':'เพิ่มผู้ประกอบการ';
@@ -4512,6 +4677,8 @@ function fillSettings(){var s=DATA.settings;
   ['Haz','Food','Market','Foodnotify'].forEach(function(k){var el=document.getElementById('s_fee'+k);if(el)el.value=s['fee'+k]||'';});
   var pchk=document.getElementById('s_ppEnabled');if(pchk)pchk.checked=String(s.ppEnabled)==='1';
   var schk=document.getElementById('s_slipEnabled');if(schk)schk.checked=String(s.slipEnabled)==='1';
+  var fchk=document.getElementById('s_financeEnabled');if(fchk)fchk.checked=(s.financeEnabled==null?true:String(s.financeEnabled)==='1');
+  if(typeof finToggleHint==='function')finToggleHint();
   ['ppType','ppId','ppName','ppBank','ppAccount','ppNote'].forEach(function(k){var el=document.getElementById('s_'+k);if(el)el.value=s[k]||'';});
   ppPreview();
   document.getElementById('s_notifyEmail').value=s.notifyEmail||'';
@@ -4519,6 +4686,7 @@ function fillSettings(){var s=DATA.settings;
   if(!document.getElementById('s_notifyHour').value)document.getElementById('s_notifyHour').value='8';
   drawImg('logo',s.logoUrl);drawImg('sign',s.signUrl);drawImg('garuda',s.garudaUrl);drawImg('seal',s.sealUrl);drawImg('loginbg',s.loginBgUrl);
   if(document.getElementById('s_loginbgurl'))document.getElementById('s_loginbgurl').value=(s.loginBgUrl&&/^https?:\/\//i.test(s.loginBgUrl))?s.loginBgUrl:'';
+  renderTierRows();
   markSwatch(s.themeColor);initDnd();loadNotifyStatus();loadBackupStatus();loadStorageInfo();}
 function loadNotifyStatus(){call('getNotifyStatus',function(r){
   var on=r&&r.enabled;
@@ -4552,12 +4720,37 @@ function saveSet(){
   var btn=document.getElementById('saveSetBtn');btn.disabled=true;btn.innerHTML='<span class="loader"></span> กำลังบันทึก...';
   var s={orgName:val('s_org'),orgSub:val('s_sub'),mayorName:val('s_mayor'),mayorTitle:val('s_mtitle'),receiverName:val('s_receiver'),
     feeHaz:val('s_feeHaz'),feeFood:val('s_feeFood'),feeMarket:val('s_feeMarket'),feeFoodnotify:val('s_feeFoodnotify'),
+    feeHotelTiers:JSON.stringify(gatherTiers()),
     ppEnabled:(document.getElementById('s_ppEnabled')&&document.getElementById('s_ppEnabled').checked)?'1':'0',
     ppType:val('s_ppType'),ppId:val('s_ppId'),ppName:val('s_ppName'),ppBank:val('s_ppBank'),ppAccount:val('s_ppAccount'),ppNote:val('s_ppNote'),
-    slipEnabled:(document.getElementById('s_slipEnabled')&&document.getElementById('s_slipEnabled').checked)?'1':'0'};
+    slipEnabled:(document.getElementById('s_slipEnabled')&&document.getElementById('s_slipEnabled').checked)?'1':'0',
+    financeEnabled:(document.getElementById('s_financeEnabled')&&document.getElementById('s_financeEnabled').checked)?'1':'0'};
   for(var k in s)DATA.settings[k]=s[k];
   call('saveSettings',function(res){btn.disabled=false;btn.innerHTML=svg('save')+' บันทึกการตั้งค่า';
-    if(res&&res.ok){toast('บันทึกการตั้งค่าสำเร็จ','ok');applyBranding();renderCertLive();}else toast('บันทึกไม่สำเร็จ','err');},[s]);
+    if(res&&res.ok){toast('บันทึกการตั้งค่าสำเร็จ','ok');applyBranding();renderCertLive();applyFinanceVisibility();}else toast('บันทึกไม่สำเร็จ','err');},[s]);
+}
+function doBackfillPrefix(){
+  var btn=document.getElementById('backfillBtn');var res=document.getElementById('backfillResult');
+  askConfirm({title:'เติมอักษรนำย้อนหลังให้ใบเก่า',okText:'ดำเนินการ',
+    html:'ระบบจะเติมอักษรนำ (อภ./ตล./สอ./สธ./มฝ./สอ.รจ.) ให้ใบอนุญาตที่ออกแล้วทุกใบตามกลุ่มของมัน<br><br><b>ไม่เปลี่ยนหมายเลขเดิม</b> และรันซ้ำได้ ปลอดภัย'},function(ok){
+    if(!ok)return;
+    btn.disabled=true;btn.innerHTML='<span class="loader"></span> กำลังเติม...';
+    call('backfillLicensePrefixes',function(r){
+      btn.disabled=false;btn.innerHTML=svg('refresh')+' เติมอักษรนำย้อนหลังให้ใบเก่า';
+      if(r&&r.ok){
+        res.innerHTML='<span style="color:var(--ok)">เติมสำเร็จ '+r.updated+' ใบ (จากที่ออกเลขแล้ว '+r.scanned+' ใบ)</span>';
+        toast('เติมอักษรนำย้อนหลัง '+r.updated+' ใบ','ok');logIt('เติม prefix ใบอนุญาตย้อนหลัง',r.updated+' ใบ');
+        DATA.applications=null;loadApps(true);
+      }else{res.innerHTML='<span style="color:#a52a1d">ไม่สำเร็จ: '+esc((r&&r.error)||'')+'</span>';toast('ไม่สำเร็จ','err');}
+    },[]);
+  });
+}
+function finToggleHint(){
+  var el=document.getElementById('finHint');if(!el)return;
+  var on=document.getElementById('s_financeEnabled')&&document.getElementById('s_financeEnabled').checked;
+  el.innerHTML=on
+    ?'<b style="color:var(--ok)">เปิดอยู่</b> — เมนู "ออกใบเสร็จรับเงิน", การรับชำระ, การออกเลขที่ใบเสร็จ, QR พร้อมเพย์ และการแนบสลิป ใช้งานได้ตามปกติ'
+    :'<b style="color:#a52a1d">ปิดอยู่</b> — จะซ่อนเมนูออกใบเสร็จ ปุ่มยืนยันชำระ พิมพ์ใบเสร็จ QR พร้อมเพย์ และการ์ด "รอชำระเงิน" · <b>ค่าธรรมเนียมบนใบอนุญาตยังพิมพ์ได้ตามปกติ</b> (เป็นข้อมูลคนละส่วน) · ข้อมูลใบเสร็จเดิมที่ออกไปแล้วไม่ถูกลบ กลับมาเปิดเมื่อไรก็เห็นเหมือนเดิม';
 }
 function imgUrlKey(k){return {logo:'logoUrl',sign:'signUrl',garuda:'garudaUrl',seal:'sealUrl',loginbg:'loginBgUrl'}[k]||'logoUrl';}
 function imgLabel(k){return {logo:'โลโก้',sign:'ลายเซ็น',garuda:'ตราครุฑ',seal:'ตราประทับ',loginbg:'พื้นหลังหน้าเข้าสู่ระบบ'}[k]||'รูป';}
@@ -4722,15 +4915,37 @@ function openMap(coords){var p=coordsParse(coords);if(p)window.open('https://www
 /* ===== คำขอใบอนุญาต ===== */
 var FORMS={
  haz:{title:'แบบคำขอรับใบอนุญาต/ต่ออายุใบอนุญาต',sub:'ประกอบกิจการที่เป็นอันตรายต่อสุขภาพ',signer:'ผู้ขอรับใบอนุญาต',estab:false,fee:true,
-   atts:['สำเนาบัตรประจำตัว (ประชาชน/ข้าราชการ/พนักงานวิสาหกิจ/อื่นๆ)','สำเนาใบอนุญาตตามกฎหมายว่าด้วยควบคุมอาคาร หนังสือให้ความเห็นชอบการประเมินผลกระทบต่อสิ่งแวดล้อม หรือใบอนุญาตตามกฎหมายอื่นที่จำเป็น','สำเนาหนังสือรับรองการจดทะเบียนนิติบุคคล','แผนที่ตั้งสถานประกอบการ','ภาพถ่ายสถานประกอบการและภาพถ่ายการตรวจถังดับเพลิง','สำเนาใบเสร็จค่าธรรมเนียมเก็บขนขยะ/ใบอนุญาตเก็บขนขยะ','รายงานการตรวจคุณภาพน้ำทิ้ง','สำเนาใบอนุญาตประกอบกิจการฯ (กรณีต่ออายุ)','ใบอนุญาตประกอบธุรกิจโรงแรม (กรณีโรงแรม)','สำเนาเอกสารแสดงกรรมสิทธิ์ที่ดิน','สำเนาสัญญาเช่าที่ดิน (กรณีไม่ได้เป็นเจ้าของที่)','หนังสือมอบอำนาจ พร้อมอากรแสตมป์ 30 บาท (กรณีมอบอำนาจ)','สำเนาบัตรประชาชนและทะเบียนบ้าน (ผู้มอบ/ผู้รับมอบอำนาจ)']},
+   atts:['สำเนาบัตรประจำตัว (ประชาชน/ข้าราชการ/พนักงานวิสาหกิจ/อื่นๆ)','สำเนาใบอนุญาตตามกฎหมายว่าด้วยควบคุมอาคาร หนังสือให้ความเห็นชอบการประเมินผลกระทบต่อสิ่งแวดล้อม หรือใบอนุญาตตามกฎหมายอื่นที่จำเป็น','สำเนาหนังสือรับรองการจดทะเบียนนิติบุคคล','แผนที่ตั้งสถานประกอบการ','ภาพถ่ายสถานประกอบการและภาพถ่ายการตรวจถังดับเพลิง','สำเนาใบเสร็จค่าธรรมเนียมเก็บขนขยะ/ใบอนุญาตเก็บขนขยะ','รายงานการตรวจคุณภาพน้ำทิ้ง','สำเนาใบอนุญาตประกอบกิจการฯ (กรณีต่ออายุ)','ใบอนุญาตประกอบธุรกิจโรงแรม (กรณีโรงแรม)','สำเนาเอกสารแสดงกรรมสิทธิ์ที่ดิน','สำเนาสัญญาเช่าที่ดินที่ตั้งสถานประกอบการ (กรณีไม่ได้เป็นเจ้าของที่) เอกสารเพิ่มเติมกรณีมอบอำนาจ','หนังสือมอบอำนาจ พร้อมอากรแสตมป์ 30 บาท (กรณีมอบอำนาจ)','สำเนาบัตรประชาชนและทะเบียนบ้าน (ผู้มอบ/ผู้รับมอบอำนาจ)']},
  food:{title:'แบบคำขอรับใบอนุญาต/ต่ออายุใบอนุญาต',sub:'จัดตั้งสถานที่จำหน่ายอาหารและสถานที่สะสมอาหาร',signer:'ผู้ขอรับใบอนุญาต',estab:true,fee:false,
-   atts:['สำเนาบัตรประจำตัว (ประชาชน/ข้าราชการ/พนักงานวิสาหกิจ/อื่นๆ)','สำเนาใบอนุญาตตามกฎหมายว่าด้วยควบคุมอาคาร หนังสือให้ความเห็นชอบการประเมินผลกระทบต่อสิ่งแวดล้อม หรือใบอนุญาตตามกฎหมายอื่นที่จำเป็น','สำเนาหนังสือรับรองการจดทะเบียนนิติบุคคล','แผนที่ตั้งสถานประกอบการ','ภาพถ่ายสถานประกอบการและภาพถ่ายการตรวจถังดับเพลิง','สำเนาใบเสร็จค่าธรรมเนียมเก็บขนขยะ/ใบอนุญาตเก็บขนขยะ','สำเนาใบอนุญาตจัดตั้งสถานที่จำหน่าย/สะสมอาหาร (กรณีต่ออายุ)','เอกสารตรวจสุขภาพผู้สัมผัสอาหาร/ผ่านอบรมสุขาภิบาลอาหาร','สำเนาเอกสารแสดงกรรมสิทธิ์ที่ดิน','สำเนาสัญญาเช่าที่ดิน (กรณีไม่ได้เป็นเจ้าของที่)','หนังสือมอบอำนาจ พร้อมอากรแสตมป์ 30 บาท (กรณีมอบอำนาจ)','สำเนาบัตรประชาชนและทะเบียนบ้าน (ผู้มอบ/ผู้รับมอบอำนาจ)']},
+   atts:['สำเนาบัตรประจำตัว (ประชาชน/ข้าราชการ/พนักงานวิสาหกิจ/อื่นๆ)','สำเนาใบอนุญาตตามกฎหมายว่าด้วยควบคุมอาคาร หนังสือให้ความเห็นชอบการประเมินผลกระทบต่อสิ่งแวดล้อม หรือใบอนุญาตตามกฎหมายอื่นที่จำเป็น','สำเนาหนังสือรับรองการจดทะเบียนนิติบุคคล','แผนที่ตั้งสถานประกอบการ','ภาพถ่ายสถานประกอบการและภาพถ่ายการตรวจถังดับเพลิง','สำเนาใบเสร็จค่าธรรมเนียมเก็บขนขยะ/ใบอนุญาตเก็บขนขยะ','สำเนาใบอนุญาตจัดตั้งสถานที่จำหน่าย/สะสมอาหาร (กรณีต่ออายุ)','เอกสารตรวจสุขภาพผู้สัมผัสอาหาร/ผ่านอบรมสุขาภิบาลอาหาร','สำเนาเอกสารแสดงกรรมสิทธิ์ที่ดิน','สำเนาสัญญาเช่าที่ดินที่ตั้งสถานประกอบการ (กรณีไม่ได้เป็นเจ้าของที่) เอกสารเพิ่มเติมกรณีมอบอำนาจ','หนังสือมอบอำนาจ พร้อมอากรแสตมป์ 30 บาท (กรณีมอบอำนาจ)','สำเนาบัตรประชาชนและทะเบียนบ้าน (ผู้มอบ/ผู้รับมอบอำนาจ)']},
  market:{title:'คำขอ / ต่อใบอนุญาต',sub:'ประกอบกิจการตลาด',signer:'ผู้ขอรับใบอนุญาต',estab:false,fee:false,
    atts:['สำเนาบัตรประจำตัว (ประชาชน/ข้าราชการ/รัฐวิสาหกิจ/อื่นๆ)','สำเนาทะเบียนบ้าน','สำเนาหนังสือรับรองการจดทะเบียน (กรณีนิติบุคคล)','แผนที่ตั้งตลาด','ภาพถ่ายตลาด','สำเนาใบเสร็จค่าธรรมเนียมเก็บขนขยะ','สำเนาใบอนุญาตฉบับเดิม (กรณีต่อใบอนุญาต)','สำเนาสัญญาเช่า/กรรมสิทธิ์ที่ดิน','หนังสือมอบอำนาจ พร้อมอากรแสตมป์ 30 บาท (กรณีมอบอำนาจ)','สำเนาบัตรประชาชนและทะเบียนบ้าน (ผู้มอบ/ผู้รับมอบอำนาจ)']},
  foodnotify:{title:'แบบคำขอแจ้ง',sub:'จัดตั้งสถานที่จำหน่ายอาหารหรือสถานที่สะสมอาหาร',signer:'ผู้ขอแจ้ง',estab:true,fee:false,
-   atts:['สำเนาบัตรประจำตัว (ประชาชน/ข้าราชการ/รัฐวิสาหกิจ/อื่นๆ)','สำเนาหนังสือรับรองการจดทะเบียนเป็นนิติบุคคล','แผนที่ตั้งสถานประกอบการ','ภาพถ่ายสถานประกอบการ','ภาพถ่ายการตรวจบันทึกถังดับเพลิง','สำเนาใบเสร็จค่าธรรมเนียมเก็บขนขยะ/ใบอนุญาตเก็บขนขยะ','เอกสารตรวจสุขภาพพนักงาน/ผ่านทดสอบความรู้สุขาภิบาลอาหาร','สำเนาเอกสารแสดงกรรมสิทธิ์ที่ดิน','สำเนาสัญญาเช่าที่ดิน (กรณีไม่ได้เป็นเจ้าของที่)','หนังสือมอบอำนาจ พร้อมอากรแสตมป์ 30 บาท (กรณีมอบอำนาจ)','สำเนาบัตรประชาชนและทะเบียนบ้าน (ผู้มอบ/ผู้รับมอบอำนาจ)']}
+   atts:['สำเนาบัตรประจำตัว (ประชาชน/ข้าราชการ/รัฐวิสาหกิจ/อื่นๆ)','สำเนาหนังสือรับรองการจดทะเบียนเป็นนิติบุคคล','แผนที่ตั้งสถานประกอบการ','ภาพถ่ายสถานประกอบการ','ภาพถ่ายการตรวจบันทึกถังดับเพลิง','สำเนาใบเสร็จค่าธรรมเนียมเก็บขนขยะ/ใบอนุญาตเก็บขนขยะ','เอกสารตรวจสุขภาพพนักงาน/ผ่านทดสอบความรู้สุขาภิบาลอาหาร','สำเนาเอกสารแสดงกรรมสิทธิ์ที่ดิน','สำเนาสัญญาเช่าที่ดินที่ตั้งสถานประกอบการ (กรณีไม่ได้เป็นเจ้าของที่) เอกสารเพิ่มเติมกรณีมอบอำนาจ','หนังสือมอบอำนาจ พร้อมอากรแสตมป์ 30 บาท (กรณีมอบอำนาจ)','สำเนาบัตรประชาชนและทะเบียนบ้าน (ผู้มอบ/ผู้รับมอบอำนาจ)']},
+ pubvend:{title:'แบบคำขอรับใบอนุญาต/ต่ออายุใบอนุญาต',sub:'จำหน่ายสินค้าในที่หรือทางสาธารณะ',signer:'ผู้ขอรับใบอนุญาต',estab:true,fee:false,
+   atts:['สำเนาบัตรประจำตัว (ประชาชน/ข้าราชการ/รัฐวิสาหกิจ/อื่นๆ)','สำเนาทะเบียนบ้าน','รูปถ่ายหน้าตรง ขนาด 1 นิ้ว (ถ่ายไม่เกิน 6 เดือน)','แผนที่สังเขปแสดงที่ตั้งจำหน่ายสินค้า','ใบรับรองแพทย์ (กรณีจำหน่ายอาหาร)','สำเนาใบอนุญาตฉบับเดิม (กรณีต่ออายุ)','หนังสือมอบอำนาจ พร้อมอากรแสตมป์ 30 บาท (กรณีมอบอำนาจ)','สำเนาบัตรประชาชนและทะเบียนบ้าน (ผู้มอบ/ผู้รับมอบอำนาจ)']},
+ waste:{title:'แบบคำขอรับใบอนุญาต/ต่ออายุใบอนุญาต',sub:'ประกอบกิจการรับทำการเก็บ ขน หรือกำจัดสิ่งปฏิกูลหรือมูลฝอย',signer:'ผู้ขอรับใบอนุญาต',estab:false,fee:false,
+   atts:['สำเนาบัตรประจำตัว (ประชาชน/ข้าราชการ/รัฐวิสาหกิจ/อื่นๆ)','สำเนาทะเบียนบ้าน','สำเนาหนังสือรับรองการจดทะเบียนนิติบุคคล','รายละเอียด/แผนที่แสดงยานพาหนะและอุปกรณ์การเก็บขน','เอกสารแสดงสถานที่/วิธีการกำจัดสิ่งปฏิกูลหรือมูลฝอย','สำเนาใบอนุญาตฉบับเดิม (กรณีต่ออายุ)','หนังสือมอบอำนาจ พร้อมอากรแสตมป์ 30 บาท (กรณีมอบอำนาจ)','สำเนาบัตรประชาชนและทะเบียนบ้าน (ผู้มอบ/ผู้รับมอบอำนาจ)']}
 };
-var FORM_NAMES={haz:'กิจการอันตรายต่อสุขภาพ',food:'จำหน่าย/สะสมอาหาร (ใบอนุญาต)',market:'ตลาด',foodnotify:'จำหน่าย/สะสมอาหาร (แจ้ง)'};
+var FORM_NAMES={haz:'กิจการอันตรายต่อสุขภาพ',food:'จำหน่าย/สะสมอาหาร (ใบอนุญาต)',market:'ตลาด',foodnotify:'จำหน่าย/สะสมอาหาร (แจ้ง)',pubvend:'จำหน่ายสินค้าในที่/ทางสาธารณะ',waste:'กำจัด/เก็บขนสิ่งปฏิกูลมูลฝอย'};
+/* ===== 6 กลุ่มใบอนุญาต/หนังสือรับรอง ตาม พรบ.สาธารณสุข 2535 =====
+   แต่ละกลุ่มออกเลขแยกกัน (running per ปี พ.ศ.) มี prefix ของตัวเอง
+   docType: 'lic' = ใบอนุญาต, 'cert' = หนังสือรับรองการแจ้ง (จำหน่ายอาหาร) */
+var LIC_GROUPS={
+  haz:       {group:'haz',       prefix:'อภ.',    docType:'lic',  name:'ใบอนุญาตประกอบกิจการที่เป็นอันตรายต่อสุขภาพ'},
+  market:    {group:'market',    prefix:'ตล.',    docType:'lic',  name:'ใบอนุญาตจัดตั้งตลาด'},
+  food:      {group:'food',      prefix:'สอ.',    docType:'lic',  name:'ใบอนุญาตจัดตั้งสถานที่จำหน่ายอาหาร/สะสมอาหาร (เกิน 200 ตร.ม.)'},
+  pubvend:   {group:'pubvend',   prefix:'สธ.',    docType:'lic',  name:'ใบอนุญาตจำหน่ายสินค้าในที่หรือทางสาธารณะ'},
+  waste:     {group:'waste',     prefix:'มฝ.',    docType:'lic',  name:'ใบอนุญาตกำจัด/รับทำการเก็บขนสิ่งปฏิกูลหรือมูลฝอย'},
+  foodnotify:{group:'foodnotify',prefix:'สอ.รจ.', docType:'cert', name:'หนังสือรับรองการแจ้งจัดตั้งสถานที่จำหน่ายอาหาร/สะสมอาหาร (ไม่เกิน 200 ตร.ม.)'}
+};
+function licGroupOf(fk){return LIC_GROUPS[fk]||{group:fk,prefix:'',docType:'lic',name:''};}
+/* ป้ายเลขที่ใบอนุญาตสำหรับแสดง — ใบเก่าที่ไม่มี licPrefix จะโชว์เลขเปล่าเหมือนเดิม */
+function licDisplayNo(d){
+  if(!d||!d.licNo)return '';
+  var pfx=d.licPrefix||'';
+  return pfx+String(d.licNo)+(d.licYear?('/'+d.licYear):'');
+}
 var editingApp=null;
 function fld(id,label,ph,w){return '<div style="flex:'+(w||1)+';min-width:140px"><label>'+label+'</label><input class="field" id="ap_'+id+'"'+(ph?' placeholder="'+ph+'"':'')+'></div>';}
 function fldDate(id,label,w){return '<div style="flex:'+(w||1)+';min-width:140px"><label>'+label+'</label><input class="field" type="date" id="ap_'+id+'" onchange="beHint(this)"><div class="behint" style="font-size:11.5px;color:var(--muted);margin-top:3px"></div></div>';}
@@ -4764,25 +4979,48 @@ function renderAppForm(){
     h+='<h4 style="margin:6px 0">ข้อมูลกิจการ (อันตรายต่อสุขภาพ)</h4>';
     h+='<div class="row" style="display:flex;gap:10px;flex-wrap:wrap">'+fld('htype','ประเภทกิจการ','',2)+fld('hclause','ตามบัญชีต่อท้ายข้อบังคับ ข้อ')+fld('hfee','ค่าธรรมเนียม (บาท)')+'</div>';
   }
-  if(hasEstab){
-    h+='<h4 style="margin:6px 0">ข้อมูลสถานประกอบการ</h4>';
-    h+='<div class="row" style="display:flex;gap:10px;flex-wrap:wrap">'+fld('ename','ชื่อสถานประกอบกิจการ','',2)+fld('etype','ประเภท')+fld('earea','พื้นที่ (ตร.ม.)')+'</div>';
-    h+='<div class="row" style="display:flex;gap:10px;flex-wrap:wrap">'+fld('eno','ตั้งอยู่เลขที่')+fld('emoo','หมู่ที่')+fld('etambon','ตำบล','เชิงทะเล')+fld('eamphoe','อำเภอ','ถลาง')+fld('eprov','จังหวัด','ภูเก็ต')+'</div>';
-  }
+  h+='<h4 style="margin:6px 0">ข้อมูลสถานประกอบการ</h4>';
+  h+='<div class="row" style="display:flex;gap:10px;flex-wrap:wrap">'+fld('ename','ชื่อสถานประกอบกิจการ','',2)+fld('etype','ประเภท')+(hasEstab?fld('earea','พื้นที่ (ตร.ม.)'):'')+'</div>';
+  h+='<div class="row" style="display:flex;gap:10px;flex-wrap:wrap">'+fld('eno','ตั้งอยู่เลขที่')+fld('emoo','หมู่ที่')+fld('etambon','ตำบล','เชิงทะเล')+fld('eamphoe','อำเภอ','ถลาง')+fld('eprov','จังหวัด','ภูเก็ต')+'</div>';
+
   if(single){
     h+='<h4 style="margin:10px 0 4px">เอกสารแนบ (ติ๊กรายการที่แนบมาด้วย)</h4>';
     h+='<div style="display:flex;flex-direction:column;gap:7px">'+FORMS[keys[0]].atts.map(function(a,i){return '<label style="display:flex;gap:9px;align-items:flex-start;font-size:13.5px;font-weight:400;cursor:pointer"><input type="checkbox" class="ap_att" data-i="'+i+'" style="margin-top:3px">'+esc(a)+'</label>';}).join('')+'</div>';
   }else{
     h+='<div style="margin:10px 0 0;color:var(--muted);font-size:12.5px">* เลือกหลายใบ: รายการเอกสารแนบต่างกันในแต่ละแบบ ให้ไปติ๊กภายหลังได้ที่ "แก้ไข" ของแต่ละคำขอ</div>';
   }
+  h+='<div class="row" style="margin-top:10px">'+
+     '<label class="fchk"><input type="checkbox" id="ap_isHotel" onchange="this.dataset.touched=\'1\';hotelToggle()"> กิจการห้องพัก / โรงแรม (คิดค่าธรรมเนียมตามจำนวนห้อง)</label>'+
+     '<div id="ap_hotelBox" style="display:none;margin-top:10px;padding:12px 14px;background:var(--sand-2);border:1px solid var(--line);border-radius:10px">'+
+       '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end">'+
+         '<div style="flex:0 0 160px"><label class="req">จำนวนห้องพัก (ห้อง)</label><input class="field" type="number" min="1" id="ap_rooms" oninput="roomsCalc()"></div>'+
+         '<button type="button" class="btn btn-ghost btn-sm" onclick="roomsCalc(true)">'+svg('refresh',15)+' คำนวณใหม่</button>'+
+       '</div>'+
+       '<div id="ap_roomsHint" style="font-size:12.5px;color:var(--muted);margin-top:8px;line-height:1.8"></div>'+
+     '</div></div>';
   h+='<h4 style="margin:16px 0 4px">ข้อมูลสำหรับออกใบอนุญาต (กรอกเมื่อออก/อนุมัติใบอนุญาต — จะพิมพ์ลงใบอนุญาตอัตโนมัติ)</h4>';
   h+='<div class="row" style="display:flex;gap:10px;flex-wrap:wrap">'+fld('licNo','เลขที่ใบอนุญาต')+fld('licYear','ปี (พ.ศ.)')+fld('licFee','ค่าธรรมเนียมปีละ (บาท)')+'</div>';
   if(hasEstab||isFood){h+='<div class="row" style="display:flex;gap:10px;flex-wrap:wrap">'+fld('bldg','อาคาร (ถ้ามี)','',2)+'</div>';}
   h+='<div class="row" style="display:flex;gap:10px;flex-wrap:wrap">'+fld('rcBook','ใบเสร็จ เล่มที่')+fld('rcNo','ใบเสร็จ เลขที่')+fldDate('rcDate','ใบเสร็จ ลงวันที่')+'</div>';
+  if(single){
+    h+='<div class="row fin-only" id="ap_rcSlipRow"><label>รูปใบเสร็จ / หลักฐานการชำระค่าธรรมเนียม (แนบได้ ถ้ามี)</label>'+
+       '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">'+
+       '<label class="btn btn-ghost btn-sm" style="cursor:pointer;margin:0">'+svg('upload',15)+' เลือกรูป/ไฟล์ '+
+         '<input type="file" id="ap_rcSlipFile" accept="image/*,application/pdf" style="display:none" onchange="apRcSlipPick(this)"></label>'+
+       '<span id="ap_rcSlipName" style="font-size:12.5px;color:var(--muted)">ยังไม่ได้เลือกไฟล์</span>'+
+       '</div>'+
+       '<div style="font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.7">แนบตอนนี้ได้เลย ระบบจะอัปโหลดขึ้น Google ไดรฟ์ให้อัตโนมัติหลังบันทึกคำขอสำเร็จ · รองรับ .jpg .png .pdf ไม่เกิน 5 MB · หรือแนบภายหลังที่แท็บออกใบเสร็จก็ได้</div>'+
+       '</div>';
+  }
   h+='<div class="row" style="display:flex;gap:10px;flex-wrap:wrap">'+fldDate('issueDate','วันที่ออกใบอนุญาต')+fldDate('expireDate',(single&&isNotify)?'วันครบกำหนดชำระค่าธรรมเนียม':'วันสิ้นอายุ / วันครบกำหนดชำระ')+'</div>';
   h+='<div class="row two" style="margin-top:14px"><div><label>สถานะคำขอ</label><select class="field" id="ap_status"><option>รับเรื่อง</option><option>กำลังตรวจสอบ</option><option>อนุมัติ</option><option>ไม่อนุมัติ</option></select></div><div><label>หมายเหตุ</label><input class="field" id="ap_note"></div></div>';
   h+='<div class="formbar"><button class="btn btn-primary" id="apSaveBtn" onclick="submitApp()">'+svg('save')+' '+(single?'บันทึกคำขอ':('บันทึก '+keys.length+' คำขอ'))+'</button><button class="btn btn-ghost" onclick="resetAppForm()">ล้างฟอร์ม</button><span class="fb-note">'+(single?esc(FORMS[keys[0]].title):('ขอพร้อมกัน '+keys.length+' ใบ'))+'</span></div>';
   box.innerHTML=h;
+  FEE_AUTO=null;
+  PENDING_RC_SLIP=null;
+  if(typeof applyFinanceVisibility==='function')applyFinanceVisibility();
+  ['htype','etype','ename'].forEach(function(id){var el=document.getElementById('ap_'+id);
+    if(el)el.addEventListener('input',hotelSniff);});
   if(!document.getElementById('ap_date').value)document.getElementById('ap_date').value=new Date().toISOString().slice(0,10);
 }
 function apVal(id){var el=document.getElementById('ap_'+id);return el?el.value.trim():'';}
@@ -4794,11 +5032,103 @@ function gatherApp(){
     htype:apVal('htype'),hclause:apVal('hclause'),hfee:apVal('hfee'),
     ename:apVal('ename'),etype:apVal('etype'),earea:apVal('earea'),eno:apVal('eno'),emoo:apVal('emoo'),etambon:apVal('etambon'),eamphoe:apVal('eamphoe'),eprov:apVal('eprov'),
     bldg:apVal('bldg'),licNo:apVal('licNo'),licYear:apVal('licYear'),licFee:apVal('licFee'),rcBook:apVal('rcBook'),rcNo:apVal('rcNo'),rcDate:apVal('rcDate'),issueDate:apVal('issueDate'),expireDate:apVal('expireDate'),
+    rooms:apVal('rooms'),isHotel:((document.getElementById('ap_isHotel')||{}).checked)?'1':'',
     atts:atts,note:apVal('note'),status:apVal('status'),
     applicantName:apVal('name'),bizName:apVal('ename'),receivedDate:apVal('date')};
 }
 function merge_(a,b){var o={},k;for(k in a)o[k]=a[k];for(k in b)o[k]=b[k];return o;}
 function feeRateOf(fk){var s=DATA.settings||{};return {haz:s.feeHaz,food:s.feeFood,market:s.feeMarket,foodnotify:s.feeFoodnotify}[fk]||'';}
+/* ===== ค่าธรรมเนียมกิจการห้องพัก / โรงแรม (คิดตามจำนวนห้อง) ===== */
+var FEE_AUTO=null;
+/* ===== รูปใบเสร็จที่แนบตอนกรอกคำขอ (พักไว้ อัปหลังบันทึกได้ row) ===== */
+var PENDING_RC_SLIP=null;
+function apRcSlipPick(input){
+  var f=input.files[0];input.value='';
+  var nm=document.getElementById('ap_rcSlipName');
+  if(!f){PENDING_RC_SLIP=null;if(nm)nm.textContent='ยังไม่ได้เลือกไฟล์';return;}
+  if(!/^image\//.test(f.type)&&f.type!=='application/pdf'){toast('รองรับเฉพาะรูปภาพหรือ PDF','err');if(nm)nm.textContent='ยังไม่ได้เลือกไฟล์';return;}
+  if(f.size>5*1024*1024){toast('ไฟล์ใหญ่เกิน 5 MB','err');if(nm)nm.textContent='ยังไม่ได้เลือกไฟล์';return;}
+  PENDING_RC_SLIP=f;
+  if(nm)nm.innerHTML='<b style="color:var(--ok)">'+esc(f.name)+'</b> — จะอัปโหลดหลังบันทึกคำขอ';
+}
+function uploadPendingRcSlip(row,cb){
+  if(!PENDING_RC_SLIP||row==null){if(cb)cb();return;}
+  var f=PENDING_RC_SLIP;PENDING_RC_SLIP=null;
+  var send=function(dataUrl){
+    setBusy(true,'กำลังอัปโหลดรูปใบเสร็จ...');
+    call('uploadSlip',function(res){setBusy(false);
+      if(res&&res.ok){var d=findApp(row);if(d){d.slips=d.slips||[];d.slips.push(res.slip);}
+        toast('แนบรูปใบเสร็จแล้ว','ok');logIt('แนบรูปใบเสร็จ',(d?d.appNo:'')+' · '+res.slip.name);}
+      else toast('อัปโหลดรูปใบเสร็จไม่สำเร็จ: '+((res&&res.error)||''),'err');
+      if(cb)cb();
+    },[row,dataUrl,f.name,(ME&&ME.username)||'']);
+  };
+  if(/^image\//.test(f.type)&&f.type!=='image/gif')compressToJpeg(f,1400,0.78,send);
+  else{var fr=new FileReader();fr.onload=function(e){send(e.target.result);};fr.readAsDataURL(f);}
+}
+var HOTEL_RE=/โรงแรม|ห้องพัก|ที่พัก|รีสอร์[ทต]|เกสต์เฮ[้า]?าส์|โฮสเทล|อพาร์[ทต]เมนต์|แมนชั่?น|hotel|resort|hostel|guest\s*house|apartment/i;
+function hotelTiers(){
+  var t=[];try{t=JSON.parse((DATA.settings||{}).feeHotelTiers||'[]');}catch(e){t=[];}
+  if(!t.length)t=[{max:20,fee:1000},{max:50,fee:2000},{max:100,fee:3000},{max:0,fee:5000}];
+  return t.slice().sort(function(a,b){return ((+a.max)||1e9)-((+b.max)||1e9);});
+}
+function hotelFee(rooms){
+  var n=parseInt(rooms,10);if(isNaN(n)||n<=0)return null;
+  var t=hotelTiers(),prev=0;
+  for(var i=0;i<t.length;i++){
+    var mx=+t[i].max||0;
+    var lb=mx?((prev+1)+'–'+mx+' ห้อง'):('ตั้งแต่ '+(prev+1)+' ห้องขึ้นไป');
+    if(!mx||n<=mx)return {fee:+t[i].fee||0,label:lb,n:n};
+    prev=mx;
+  }
+  var L=t[t.length-1];return {fee:+L.fee||0,label:'ขั้นสูงสุด',n:n};
+}
+function tierRowHtml(t){t=t||{max:'',fee:''};
+  return '<div class="tierrow" style="display:flex;gap:8px;align-items:center;margin-bottom:6px">'+
+    '<span style="font-size:12.5px;color:var(--muted);white-space:nowrap">ไม่เกิน</span>'+
+    '<input class="field tier-max" type="number" min="0" style="width:110px" value="'+(t.max?esc(t.max):'')+'" placeholder="เว้น=ขึ้นไป">'+
+    '<span style="font-size:12.5px;color:var(--muted);white-space:nowrap">ห้อง =</span>'+
+    '<input class="field tier-fee" type="number" min="0" style="width:130px" value="'+esc(t.fee)+'">'+
+    '<span style="font-size:12.5px;color:var(--muted);white-space:nowrap">บาท/ปี</span>'+
+    '<button type="button" class="iconbtn danger" onclick="this.parentNode.remove()">'+svg('trash',15)+'</button></div>';
+}
+function renderTierRows(){var box=document.getElementById('hotelTierRows');if(!box)return;
+  box.innerHTML=hotelTiers().map(tierRowHtml).join('');}
+function addTierRow(){var box=document.getElementById('hotelTierRows');if(!box)return;
+  box.insertAdjacentHTML('beforeend',tierRowHtml());}
+function gatherTiers(){var out=[];
+  document.querySelectorAll('#hotelTierRows .tierrow').forEach(function(r){
+    var mx=r.querySelector('.tier-max').value.trim(),fe=r.querySelector('.tier-fee').value.trim();
+    if(fe==='')return;out.push({max:mx?+mx:0,fee:+fe});});
+  return out;}
+function looksHotel(){return HOTEL_RE.test([apVal('htype'),apVal('etype'),apVal('ename')].join(' '));}
+function hotelSniff(){
+  var cb=document.getElementById('ap_isHotel');
+  if(!cb||cb.checked||cb.dataset.touched)return;
+  if(looksHotel()){cb.checked=true;hotelToggle();toast('ตรวจพบกิจการห้องพัก/โรงแรม — เปิดช่องจำนวนห้องให้แล้ว','ok');}
+}
+function hotelToggle(){
+  var cb=document.getElementById('ap_isHotel'),box=document.getElementById('ap_hotelBox');
+  if(!cb||!box)return;
+  box.style.display=cb.checked?'':'none';
+  if(cb.checked)roomsCalc();
+  else{var h=document.getElementById('ap_roomsHint');if(h)h.textContent='';}
+}
+function roomsCalc(force){
+  var hint=document.getElementById('ap_roomsHint');if(!hint)return;
+  var r=hotelFee(apVal('rooms'));
+  if(!r){hint.textContent='กรอกจำนวนห้อง แล้วระบบจะคิดค่าธรรมเนียมให้อัตโนมัติ';return;}
+  var feeEl=document.getElementById('ap_licFee');
+  var cur=feeEl?feeEl.value.trim():'';
+  var auto=force||!cur||(FEE_AUTO!=null&&cur===String(FEE_AUTO));
+  if(auto&&feeEl){
+    feeEl.value=r.fee;FEE_AUTO=r.fee;
+    var hf=document.getElementById('ap_hfee');if(hf)hf.value=r.fee;
+  }
+  hint.innerHTML=esc(r.n)+' ห้อง → ขั้น <b style="color:var(--ink)">'+esc(r.label)+'</b> → <b style="color:var(--teal);font-size:14px">'+money(r.fee)+' บาท/ปี</b><br>'+
+    (auto?'✓ ระบบเติมลงช่อง "ค่าธรรมเนียมปีละ" ให้แล้ว — แก้ทับได้':
+          '⚠ ช่องค่าธรรมเนียมถูกแก้เอง ('+esc(cur)+') ระบบไม่ทับให้ · กด "คำนวณใหม่" ถ้าต้องการใช้อัตราระบบ');
+}
 function markInvalid(id){var el=document.getElementById(id);if(!el)return;el.classList.add('invalid');
   el.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(function(){el.focus();},280);
   el.addEventListener('input',function h(){el.classList.remove('invalid');el.removeEventListener('input',h);});}
@@ -4806,19 +5136,30 @@ function submitApp(){
   var keys=selAppForms();
   if(!keys.length){toast('เลือกแบบฟอร์มก่อน (เลือกได้หลายใบ)','err');return;}
   if(!apVal('name')){toast('กรุณากรอกชื่อผู้ขอ','err');markInvalid('ap_name');return;}
-  var hasEstab=keys.some(function(k){return FORMS[k].estab;});
-  if(hasEstab&&!apVal('ename')){toast('กรุณากรอกชื่อสถานประกอบกิจการ','err');markInvalid('ap_ename');return;}
+  if(!apVal('ename')){toast('กรุณากรอกชื่อสถานประกอบกิจการ','err');markInvalid('ap_ename');return;}
   var base=gatherApp();var row=apVal('row');
+  if(base.isHotel==='1'){
+    if(!base.rooms){toast('กรุณาระบุจำนวนห้องพัก','err');markInvalid('ap_rooms');return;}
+    if(!base.licFee){var hr=hotelFee(base.rooms);if(hr)base.licFee=String(hr.fee);}
+  }
   var btn=document.getElementById('apSaveBtn');btn.disabled=true;btn.innerHTML='<span class="loader"></span> บันทึก...';
   var reset=function(){btn.disabled=false;renderAppForm();};
   if(row){
     var d=merge_(base,{formKey:keys[0],row:+row});
     if(!d.licFee)d.licFee=feeRateOf(keys[0]);
-    call('updateApplication',function(res){reset();if(res&&res.ok){toast('แก้ไขคำขอแล้ว','ok');logIt('แก้ไขคำขอ',d.name);resetAppForm();loadApps(true);}else toast('บันทึกไม่สำเร็จ: '+(res?res.error:''),'err');},[d]);
+    // คงค่าที่ไม่มีช่องกรอกในฟอร์มไว้ (เลข prefix/กลุ่ม, สลิป, ประวัติต่ออายุ, ใบเสร็จ)
+    var prev=findApp(+row);
+    if(prev){['licPrefix','licGroup','slips','renewals','rcVoided','isHotel'].forEach(function(k){if(d[k]==null&&prev[k]!=null)d[k]=prev[k];});}
+    call('updateApplication',function(res){if(res&&res.ok){toast('แก้ไขคำขอแล้ว','ok');logIt('แก้ไขคำขอ',d.name);
+      uploadPendingRcSlip(+row,function(){reset();resetAppForm();loadApps(true);});
+    }else{reset();toast('บันทึกไม่สำเร็จ: '+(res?res.error:''),'err');}},[d]);
   }else if(keys.length===1){
     var d1=merge_(base,{formKey:keys[0]});
     if(!d1.licFee)d1.licFee=feeRateOf(keys[0]);
-    call('saveApplication',function(res){reset();if(res&&res.ok){toast('บันทึกคำขอเลขที่ '+res.appNo+' แล้ว','ok');logIt('บันทึกคำขอ',(res.appNo||'')+' · '+d1.name);resetAppForm();loadApps(true);}else toast('บันทึกไม่สำเร็จ: '+(res?res.error:''),'err');},[d1]);
+    call('saveApplication',function(res){if(res&&res.ok){toast('บันทึกคำขอเลขที่ '+res.appNo+' แล้ว','ok');logIt('บันทึกคำขอ',(res.appNo||'')+' · '+d1.name);
+      if(PENDING_RC_SLIP&&res.row!=null){uploadPendingRcSlip(res.row,function(){reset();resetAppForm();loadApps(true);});}
+      else{reset();resetAppForm();loadApps(true);}
+    }else{reset();toast('บันทึกไม่สำเร็จ: '+(res?res.error:''),'err');}},[d1]);
   }else{
     var list=keys.map(function(k){var o=merge_(base,{formKey:k,atts:[]});if(!o.licFee)o.licFee=feeRateOf(k);return o;});
     call('addApplications',function(res){reset();if(res&&res.ok){toast('บันทึก '+res.count+' คำขอ (ผู้ขอ: '+base.name+') แล้ว','ok');logIt('บันทึกคำขอหลายใบ',res.count+' ใบ · '+base.name);resetAppForm();loadApps(true);}else toast('บันทึกไม่สำเร็จ: '+(res?res.error:''),'err');},[list]);
@@ -4845,6 +5186,7 @@ function fillFromReg(v){
   set('name',o.operatorName);set('ename',o.businessName);set('etype',firstType);set('htype',firstType);set('phone',o.phone);
   var a=parseAddr(o.address);
   set('no',a.no);set('moo',a.moo);set('soi',a.soi);set('road',a.road);set('tambon',a.tambon);set('amphoe',a.amphoe);set('prov',a.prov);
+  hotelSniff();
   toast('ดึงข้อมูลจาก '+code+' แล้ว — ตรวจสอบ/แก้ไขได้','ok');
 }
 var APP_TPL_HEAD=['ประเภทแบบฟอร์ม (haz/food/market/foodnotify)','วันที่รับคำขอ (YYYY-MM-DD)','เขียนที่','ชื่อผู้ขอ','อายุ','สัญชาติ','ผู้มีอำนาจลงนามแทนนิติบุคคล','ปรากฏตาม','บ้านเลขที่','หมู่ที่','ตรอก/ซอย','ถนน','แขวง/ตำบล','เขต/อำเภอ','เทศบาล/อบต.','จังหวัด','โทรศัพท์','ประเภทกิจการ(อันตรายฯ)','ข้อบังคับข้อ(อันตรายฯ)','ค่าธรรมเนียม(อันตรายฯ)','ชื่อสถานประกอบกิจการ(อาหาร/แจ้ง)','ประเภทสถานประกอบการ','พื้นที่ตร.ม.(อาหาร/แจ้ง)','ที่ตั้งเลขที่','ที่ตั้งหมู่ที่','ที่ตั้งตำบล','ที่ตั้งอำเภอ','ที่ตั้งจังหวัด','วันที่ออกใบอนุญาต (YYYY-MM-DD)','วันสิ้นอายุ/ครบกำหนด (YYYY-MM-DD)','สถานะ','หมายเหตุ'];
@@ -5197,9 +5539,10 @@ function approveApp(row){
     html:'คำขอ <b>'+esc(d.appNo)+'</b> · '+esc(d.applicantName||'-')+'<br><br>ระบบจะรันเลขที่ใบอนุญาต, ใส่วันที่ออก (วันนี้) และวันหมดอายุ (+1 ปี) ให้อัตโนมัติ'},function(ok){
     if(!ok)return;
     call('approveApplication',function(res){
-      if(res&&res.ok){d.status='อนุมัติ';d.licNo=res.licNo;d.licYear=res.licYear;d.issueDate=res.issueDate;d.expireDate=res.expireDate;
-        toast('อนุมัติแล้ว — ใบอนุญาตเลขที่ '+res.licNo+'/'+res.licYear,'ok',{label:'ไปออกใบเสร็จ',fn:function(){go('receipts');}});
-        logIt('อนุมัติคำขอ',d.appNo+' · ใบอนุญาต '+res.licNo+'/'+res.licYear);
+      if(res&&res.ok){d.status='อนุมัติ';d.licNo=res.licNo;d.licYear=res.licYear;d.licPrefix=res.licPrefix;d.licGroup=res.licGroup;d.issueDate=res.issueDate;d.expireDate=res.expireDate;
+        var shown=licDisplayNo(d)||((res.licNo||'')+'/'+(res.licYear||''));
+        toast('อนุมัติแล้ว — '+(licGroupOf(d.formKey).docType==='cert'?'หนังสือรับรอง':'ใบอนุญาต')+'เลขที่ '+shown,'ok',{label:'ไปออกใบเสร็จ',fn:function(){go('receipts');}});
+        logIt('อนุมัติคำขอ',d.appNo+' · '+shown);
         renderApps();if(document.getElementById('rcBody'))renderReceipts();if(typeof renderLicCards==='function')renderLicCards();
       }else toast('ไม่สำเร็จ: '+(res?res.error:''),'err');
     },[row]);
@@ -5379,8 +5722,8 @@ function renderApps(){
     return '<tr'+trc+'><td><input type="checkbox" class="apchk" value="'+d.row+'" onclick="updBulkBar()"></td><td><b style="color:var(--ocean)">'+esc(d.appNo)+'</b>'+((d.renewals&&d.renewals.length)?(' <span class="badge b-ok" style="cursor:pointer" title="คลิกดูประวัติการต่ออายุ" onclick="showRenewals('+d.row+')">ต่อ×'+d.renewals.length+'</span>'):'')+'</td><td>'+esc(FORM_NAMES[d.formKey]||d.formKey)+'</td><td>'+esc(d.applicantName||'-')+'</td><td>'+esc(d.bizName||'-')+'</td><td>'+esc(d.receivedDate||'-')+'</td>'+
       '<td><span class="badge '+sc+'">'+esc(d.status||'-')+'</span></td><td>'+esc(d.issueDate||'—')+'</td><td>'+expCell+'</td><td><div class="act">'+
       (d.status!=='อนุมัติ'?('<button class="iconbtn ok tip" data-tip="อนุมัติ + ออกใบอนุญาต" onclick="approveApp('+d.row+')">'+svg('check',16)+'</button>'):('<button class="iconbtn tip" data-tip="ต่ออายุ (+1 ปี)" onclick="renewApp('+d.row+')">'+svg('refresh',16)+'</button>'))+
-      '<button class="iconbtn tip" data-tip="พิมพ์คำขอ'+(ppEnabled()?' + ใบแจ้งชำระ':'')+'" onclick="printApp('+d.row+')">'+svg('print',16)+'</button>'+
-      (ppEnabled()?('<button class="iconbtn tip" data-tip="ใบแจ้งชำระเงิน (QR พร้อมเพย์)" onclick="printPpSlip('+d.row+')">'+svg('receipt',16)+'</button>'):'')+
+      '<button class="iconbtn tip" data-tip="พิมพ์คำขอ'+((financeOn()&&ppEnabled())?' + ใบแจ้งชำระ':'')+'" onclick="printApp('+d.row+')">'+svg('print',16)+'</button>'+
+      ((financeOn()&&ppEnabled())?('<button class="iconbtn tip" data-tip="ใบแจ้งชำระเงิน (QR พร้อมเพย์)" onclick="printPpSlip('+d.row+')">'+svg('receipt',16)+'</button>'):'')+
       '<button class="iconbtn tip" data-tip="พิมพ์ใบอนุญาต" onclick="printLicense('+d.row+')">'+svg('doc',16)+'</button>'+
       '<button class="iconbtn tip" data-tip="แก้ไข" onclick="editApp('+d.row+')">'+svg('edit',16)+'</button>'+
       '<button class="iconbtn danger tip" data-tip="ลบคำขอ" onclick="delApp('+d.row+')">'+svg('trash',16)+'</button></div></td></tr>';}).join('');
@@ -5402,9 +5745,11 @@ function editApp(row){var d=findApp(row);if(!d)return;
   document.querySelectorAll('.appform-chk').forEach(function(c){c.checked=(c.value===d.formKey);});
   renderAppForm();
   document.getElementById('ap_row').value=d.row;
-  ['place','date','name','age','nat','by','per','no','moo','soi','road','tambon','amphoe','local','prov','phone','htype','hclause','hfee','ename','etype','earea','eno','emoo','etambon','eamphoe','eprov','bldg','licNo','licYear','licFee','rcBook','rcNo','rcDate','issueDate','expireDate','note'].forEach(function(k){var el=document.getElementById('ap_'+k);if(el&&d[k]!=null)el.value=d[k];});
+  ['place','date','name','age','nat','by','per','no','moo','soi','road','tambon','amphoe','local','prov','phone','htype','hclause','hfee','ename','etype','earea','eno','emoo','etambon','eamphoe','eprov','bldg','licNo','licYear','licFee','rcBook','rcNo','rcDate','issueDate','expireDate','rooms','note'].forEach(function(k){var el=document.getElementById('ap_'+k);if(el&&d[k]!=null)el.value=d[k];});
   if(document.getElementById('ap_status'))document.getElementById('ap_status').value=d.status||'รับเรื่อง';
   (d.atts||[]).forEach(function(i){var c=document.querySelector('.ap_att[data-i="'+i+'"]');if(c)c.checked=true;});
+  var ih=document.getElementById('ap_isHotel');
+  if(ih){ih.checked=String(d.isHotel)==='1';ih.dataset.touched='1';hotelToggle();}
   window.scrollTo(0,0);toast('โหลดคำขอมาแก้ไข','ok');
 }
 function delApp(row){var d=findApp(row);if(!d)return;
@@ -5489,9 +5834,10 @@ function ppSlipHtml(d){
   return h;
 }
 function printApp(row){var d=findApp(row);if(!d)return;
+  var pp=financeOn()&&ppEnabled();
   var html=appDocHtml(d);
-  if(ppEnabled())html+='<div style="page-break-before:always">'+ppSlipHtml(d)+'</div>';
-  showPreview(html,'app','ตัวอย่างใบคำขอ'+(ppEnabled()?' + ใบแจ้งชำระเงิน':'')+' — '+(d.appNo||''));}
+  if(pp)html+='<div style="page-break-before:always">'+ppSlipHtml(d)+'</div>';
+  showPreview(html,'app','ตัวอย่างใบคำขอ'+(pp?' + ใบแจ้งชำระเงิน':'')+' — '+(d.appNo||''));}
 /* ================= สลิปการโอนเงิน ================= */
 function loadStorageInfo(){
   var el=document.getElementById('storeInfo');if(!el)return;
@@ -5543,6 +5889,15 @@ function doCheckPerms(){
   },[]);
 }
 function slipEnabled(){return String((DATA.settings||{}).slipEnabled)==='1';}
+function financeOn(){var v=(DATA.settings||{}).financeEnabled;return v==null?true:String(v)==='1';}
+function applyFinanceVisibility(){
+  var on=financeOn();
+  var mnu=document.querySelector('.nav button[data-view="receipts"]');
+  if(mnu)mnu.style.display=on?'':'none';
+  var card=document.getElementById('licUnpaid');
+  if(card){var box=card.closest('.stat');if(box)box.style.display=on?'':'none';}
+  document.querySelectorAll('.fin-only').forEach(function(e){e.style.display=on?'':'none';});
+}
 function slipCount(d){return (d.slips||[]).length;}
 function openSlips(row){
   var d=findApp(row);if(!d)return;
@@ -5685,10 +6040,11 @@ function appLicenseHtml(d){
   var mayor=s.mayorName||'นายมาโนช พันธ์ฉลาด';
   var mtitle=s.mayorTitle||'นายกองค์การบริหารส่วนตำบลเชิงทะเล';
   var org=s.orgName||'อบต.เชิงทะเล';
-  var notify=(d.formKey==='foodnotify');
+  var lg=licGroupOf(d.formKey);
+  var notify=(lg.docType==='cert');
   var docName=notify?'หนังสือรับรองการแจ้ง':'ใบอนุญาต';
-  var subMap={haz:'ประกอบกิจการที่เป็นอันตรายต่อสุขภาพ',food:'จัดตั้งสถานที่จำหน่ายอาหารและสะสมอาหาร',market:'ประกอบกิจการตลาด',foodnotify:'จัดตั้งสถานที่จำหน่ายอาหารและสถานที่สะสมอาหาร'};
-  var codeMap={haz:'แบบ อภ.2',food:'แบบ สอ.4',market:'',foodnotify:'แบบ สอ.6'};
+  var subMap={haz:'ประกอบกิจการที่เป็นอันตรายต่อสุขภาพ',food:'จัดตั้งสถานที่จำหน่ายอาหารและสะสมอาหาร',market:'ประกอบกิจการตลาด',foodnotify:'จัดตั้งสถานที่จำหน่ายอาหารและสถานที่สะสมอาหาร',pubvend:'จำหน่ายสินค้าในที่หรือทางสาธารณะ',waste:'กำจัด/รับทำการเก็บขนสิ่งปฏิกูลหรือมูลฝอย'};
+  var codeMap={haz:'แบบ อภ.2',food:'แบบ สอ.4',market:'',foodnotify:'แบบ สอ.6',pubvend:'',waste:''};
   var yr=String(new Date().getFullYear()+543);
   var fee=d.licFee||((d.formKey==='haz')?d.hfee:'');
   var feeWords=fee?('('+esc(bahtText(fee))+')'):('( '+uf('','150px')+' )');
@@ -5698,7 +6054,7 @@ function appLicenseHtml(d){
     (function(){var u=DATA.webAppUrl;if(!u||!d.appNo)return '';var q=genQR(u+(u.indexOf('?')>-1?'&':'?')+'lic='+encodeURIComponent(d.appNo));return q?('<div class="licqr"><img src="'+q+'"><div>สแกนตรวจสอบ</div></div>'):'';})()+
     '<div class="ah">'+(emblem?'<img src="'+emblem+'">':'')+
     '<div class="lt1">'+esc(docName)+'</div><div class="lt2">'+esc(subMap[d.formKey]||'')+'</div></div>';
-  h+='<div class="no">เลขที่ '+uf(d.licNo,'55px')+' ปี '+uf(d.licYear||yr,'55px')+(notify?('&nbsp;&nbsp;สำนักงาน '+esc(org)):'')+'</div>';
+  h+='<div class="no">เลขที่ '+uf((d.licPrefix||'')+(d.licNo||''),'75px')+' ปี '+uf(d.licYear||yr,'55px')+(notify?('&nbsp;&nbsp;สำนักงาน '+esc(org)):'')+'</div>';
   var verb=notify?'เจ้าพนักงานท้องถิ่นออกหนังสือรับรองให้':'เจ้าพนักงานท้องถิ่นอนุญาตให้';
   // (1) applicant — name on its own line, others spread ≤3 fields/row
   h+=ROW(fLab('(1) '+verb)+fBox(d.name,{grow:1,w:'150px'}),true);
@@ -5723,6 +6079,7 @@ function appLicenseHtml(d){
   }else{
     h+=ROW(fLab('ประเภท')+fBox(d.etype,{grow:1,w:'160px'}));
   }
+  if(String(d.isHotel)==='1'&&d.rooms)h+=ROW(fLab('จำนวนห้องพัก')+fBox(d.rooms,{w:'80px'})+fLab('ห้อง'));
   h+=ROW(fLab('อยู่บ้านเลขที่')+fBox(d.eno,{grow:1,w:'80px'})+fLab('หมู่')+fBox(d.emoo,{w:'56px'})+fLab('ตำบล')+fBox(d.etambon,{grow:1,w:'90px'}));
   h+=ROW(fLab('อำเภอ')+fBox(d.eamphoe,{grow:1,w:'90px'})+fLab('จังหวัด')+fBox(d.eprov,{grow:1,w:'90px'})+fLab('หมายเลขโทรศัพท์')+fBox(d.phone,{grow:1,w:'120px'}));
   // fee
@@ -5750,7 +6107,7 @@ function appLicenseHtml(d){
   h+='</div>';
   return h;
 }
-function receiptItemLabel(fk){return {haz:'ค่าธรรมเนียมใบอนุญาตประกอบกิจการที่เป็นอันตรายต่อสุขภาพ',food:'ค่าธรรมเนียมใบอนุญาตจัดตั้งสถานที่จำหน่ายอาหารและสะสมอาหาร',market:'ค่าธรรมเนียมใบอนุญาตประกอบกิจการตลาด',foodnotify:'ค่าธรรมเนียมหนังสือรับรองการแจ้งจัดตั้งสถานที่จำหน่ายอาหารและสะสมอาหาร'}[fk]||'ค่าธรรมเนียม';}
+function receiptItemLabel(fk){return {haz:'ค่าธรรมเนียมใบอนุญาตประกอบกิจการที่เป็นอันตรายต่อสุขภาพ',food:'ค่าธรรมเนียมใบอนุญาตจัดตั้งสถานที่จำหน่ายอาหารและสะสมอาหาร',market:'ค่าธรรมเนียมใบอนุญาตประกอบกิจการตลาด',foodnotify:'ค่าธรรมเนียมหนังสือรับรองการแจ้งจัดตั้งสถานที่จำหน่ายอาหารและสะสมอาหาร',pubvend:'ค่าธรรมเนียมใบอนุญาตจำหน่ายสินค้าในที่หรือทางสาธารณะ',waste:'ค่าธรรมเนียมใบอนุญาตกำจัด/รับทำการเก็บขนสิ่งปฏิกูลหรือมูลฝอย'}[fk]||'ค่าธรรมเนียม';}
 function rcptHalf(d,isCopy){
   var s=DATA.settings||{};
   var emblem=s.garudaUrl||s.logoUrl||(typeof DEFAULT_LOGO!=='undefined'?DEFAULT_LOGO:'');
@@ -5792,8 +6149,10 @@ function appDocHtml(d){
   var logo=s.logoUrl||(typeof DEFAULT_LOGO!=='undefined'?DEFAULT_LOGO:'');
   var dp=thParts(d.date);
   var h='<div class="appdoc"><div class="ah">'+(logo?'<img src="'+logo+'">':'')+'<div class="t1">'+esc(F.title)+'</div><div class="t2">'+esc(F.sub)+'</div></div>';
-  h+='<div class="meta">เขียนที่ '+uf(d.place,'200px')+'</div>';
-  h+='<div class="meta">วันที่ '+uf(dp.day,'40px')+' เดือน '+uf(dp.mon,'120px')+' พ.ศ. '+uf(dp.year,'60px')+'</div>';
+  h+='<div class="metawrap">';
+  h+='<div class="meta"><span class="lb">เขียนที่</span>'+uf(d.place,'200px')+'</div>';
+  h+='<div class="meta"><span class="lb">วันที่</span>'+uf(dp.day,'40px')+'<span class="lb">เดือน</span>'+uf(dp.mon,'120px')+'<span class="lb">พ.ศ.</span>'+uf(dp.year,'60px')+'</div>';
+  h+='</div>';
   h+=ROW(fLab('1. ข้าพเจ้า')+fBox(d.name,{grow:1,w:'150px'})+fLab('อายุ')+fBox(d.age,{w:'34px'})+fLab('ปี สัญชาติ')+fBox(d.nat,{grow:1,w:'70px'}),true);
   h+=ROW(fLab('โดย')+fBox(d.by,{grow:1,w:'150px'}));
   h+=ROW(fLab('ผู้มีอำนาจลงนามแทนนิติบุคคล ปรากฏตาม')+fBox(d.per,{grow:1,w:'90px'})+fLab('อยู่บ้านเลขที่')+fBox(d.no,{w:'56px'})+fLab('หมู่ที่')+fBox(d.moo,{grow:1,w:'46px'}));
@@ -5810,6 +6169,7 @@ function appDocHtml(d){
     h+=ROW(fLab('ตั้งอยู่เลขที่')+fBox(d.eno,{w:'56px'})+fLab('หมู่ที่')+fBox(d.emoo,{w:'44px'})+fLab('ตำบล')+fBox(d.etambon,{grow:1,w:'80px'}));
     h+=ROW(fLab('อำเภอ')+fBox(d.eamphoe,{grow:1,w:'90px'})+fLab('จังหวัด')+fBox(d.eprov,{grow:1,w:'90px'}));
   }
+  if(String(d.isHotel)==='1'&&d.rooms)h+=ROW(fLab('จำนวนห้องพัก')+fBox(d.rooms,{w:'80px'})+fLab('ห้อง'));
   h+=ROW(fLab('2. พร้อมคำขอนี้ ข้าพเจ้าได้แนบเอกสารหลักฐานต่าง ๆ มาด้วยแล้วดังนี้'),true);
   h+=F.atts.map(function(a,i){var on=(d.atts||[]).indexOf(i)>-1;return '<div class="att">'+(on?'☑':'☐')+'&nbsp; '+esc(a)+'</div>';}).join('');
   h+='<p class="certify">ขอรับรองว่าข้อความในคำขอนี้เป็นจริงทุกประการ</p>';
